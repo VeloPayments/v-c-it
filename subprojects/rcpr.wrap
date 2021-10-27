@@ -1,0 +1,4 @@
+[wrap-git]
+directory = rcpr
+revision = 6cb4c3f3c8ff97454dd6045c88aa7253392ce08c
+url = https://github.com/nanolith/rcpr

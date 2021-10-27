@@ -1,0 +1,5 @@
+[wrap-git]
+directory = lmdb
+revision = 86e04ee3b17b965ac865caae7ddf1cb57409d9e7
+url = git@github.com:velopayments/lmdb.git
+push-url = git@github.com:velopayments/lmdb.git
