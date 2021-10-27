@@ -1,0 +1,19 @@
+build
+tags
+cscope*
+*.core
+*.gcda
+*.gcno
+
+# don't commit source for shared projects
+subprojects/gtest
+subprojects/lmdb
+subprojects/minunit
+subprojects/rcpr
+subprojects/vcblockchain
+subprojects/vccert
+subprojects/vccrypt
+subprojects/vcdb
+subprojects/vcmodel
+subprojects/vpr
+subprojects/googletest

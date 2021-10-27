@@ -1,0 +1,5 @@
+[wrap-git]
+directory = vccert
+revision = a644fd5f3c7223ba8deaae192c96091ea40a316d
+url = git@github.com:velopayments/v-c-certificate.git
+push-url = git@github.com:velopayments/v-c-certificate.git
