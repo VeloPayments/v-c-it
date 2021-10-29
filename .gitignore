@@ -17,5 +17,6 @@ subprojects/vccert
 subprojects/vccrypt
 subprojects/vcdb
 subprojects/vcmodel
+subprojects/vctool
 subprojects/vpr
 subprojects/googletest
