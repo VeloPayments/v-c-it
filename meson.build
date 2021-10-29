@@ -17,3 +17,9 @@ vcblockchain = dependency(
     required : true,
     fallback : ['vcblockchain', 'vcblockchain_dep']
 )
+
+agentd = dependency(
+    'agentd',
+    required : true,
+    fallback : ['agentd', 'agentd_dep']
+)
