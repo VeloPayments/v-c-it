@@ -6,7 +6,9 @@ cscope*
 *.gcno
 
 # don't commit source for shared projects
+subprojects/agentd
 subprojects/gtest
+subprojects/libevent
 subprojects/lmdb
 subprojects/minunit
 subprojects/rcpr
