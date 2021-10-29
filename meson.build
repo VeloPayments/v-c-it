@@ -23,3 +23,9 @@ agentd = dependency(
     required : true,
     fallback : ['agentd', 'agentd_dep']
 )
+
+vctool = dependency(
+    'vctool',
+    required : true,
+    fallback : ['vctool', 'vctool_dep']
+)
