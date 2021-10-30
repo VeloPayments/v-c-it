@@ -23,7 +23,8 @@ test binaries. These will all be copied to `/opt/integration_tests/staging`.  A
 unique directory for each testing scenario will be created so that agentd can be
 installed and started, and the tests can be run.
 
-To run the integration tests, as a non-root user, run `./start_tests.sh`. Once
-the tests have finished building, you will be prompted to enter your user
-password to sudo to root, unless your sudoers entry does not require a password.
-Each test will run in sequence, with some test output provided to the terminal.
+To run the integration tests, as a non-root user, execute
+`./run_integration_tests.sh`. Once the tests have finished building, you will be
+prompted to enter your user password to sudo to root, unless your sudoers entry
+does not require a password.  Each test will run in sequence, with some test
+output provided to the terminal.
