@@ -5,6 +5,11 @@ if [ ! $(id -u) -eq 0 ]; then
     exit 1
 fi
 
+if [ ! -d /opt/integration_tests ]; then
+    echo "Missing /opt/integration_tests"
+    exit 1
+fi
+
 unprivileged_user=$SUDO_USER
 if [ $(id -u $unprivileged_user) -eq 0 ]; then
     echo "Can't determine unpriviledged user."
