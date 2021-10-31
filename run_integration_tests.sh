@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #get command-line arguments
-args=$(getopt c $*)
+args=$(getopt cs $*)
 if [ $? -ne 0 ]; then
     echo "Usage: run_integration_tests.sh [-c]"
     echo ""
@@ -14,6 +14,7 @@ fi
 
 #by default, don't continue
 cont=0
+skip_build=0
 
 #parse command-line arguments
 set -- $args
@@ -23,6 +24,8 @@ do
     in
         -c)
             cont=1; shift;;
+        -s)
+            cont=1; skip_build=1; shift;;
         --)
             shift; break;;
     esac
@@ -87,19 +90,24 @@ fi
 #work from the build directory
 cd build
 
-#if we are building from scratch, run a full meson configure
-if [ $cont -ne 1 ]; then
-    sudo -E -u $unprivileged_user meson ..
-#otherwise, do a reconfigure
-else
-    sudo -E -u $unprivileged_user meson --reconfigure ..
+#should we perform the build?
+if [ $skip_build -ne 1 ]; then
+
+    #if we are building from scratch, run a full meson configure
+    if [ $cont -ne 1 ]; then
+        sudo -E -u $unprivileged_user meson ..
+    #otherwise, do a reconfigure
+    else
+        sudo -E -u $unprivileged_user meson --reconfigure ..
+    fi
+
+    #build all
+    sudo -E -u $unprivileged_user ninja
+
+    #run unit tests
+    sudo -E -u $unprivileged_user ninja test
+
 fi
-
-#build all
-sudo -E -u $unprivileged_user ninja
-
-#run unit tests
-sudo -E -u $unprivileged_user ninja test
 
 #get the name of the agentd installation tarball
 agentd_package=$(ls agentd*.tar.xz)
@@ -122,6 +130,8 @@ fi
 #create a staging environment for the binaries.
 rm -rf /opt/integration_tests/staging
 mkdir /opt/integration_tests/staging
+rm -rf /opt/integration_tests/scenarios
+mkdir /opt/integration_tests/scenarios
 
 #stage the agentd tarball
 cp $agentd_package /opt/integration_tests/staging
@@ -132,3 +142,16 @@ echo "agentd tarball staged to $agentd_package"
 cp $vctool_binary /opt/integration_tests/staging
 vctool_binary=/opt/integration_tests/staging/$(basename $vctool_binary)
 echo "vctool binary staged to $vctool_binary"
+
+INTEGRATION_TEST_DIR=/opt/integration_tests/scenarios
+export INTEGRATION_TEST_DIR
+export unprivileged_user
+export agentd_package
+export vctool_binary
+
+#run each test
+for n in ../tests/*sh; do
+    echo "Running $(basename $n)"
+    $n
+    echo "$(basename $n) completed successfully."
+done
