@@ -13,6 +13,18 @@ if [ $agentd_count -gt 0 ]; then
     exit 1
 fi
 
+#make sure that there is no TIME_WAIT shenanigans going on.
+wait_loop=0
+while [ $wait_loop -eq 0 ]; do
+    time_wait=$(netstat -a | grep 4931 | grep TIME_WAIT | wc -l)
+    if [ $time_wait -gt 0 ]; then
+        echo "Waiting for TIME_WAIT on agentd port to end."
+        sleep 10
+    else
+        wait_loop=1
+    fi
+done
+
 old_dir=$(pwd)
 
 echo "Setting up $agentd_dir"

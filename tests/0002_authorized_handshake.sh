@@ -41,14 +41,21 @@ $vctool_binary -k handshake.priv -o handshake.pub pubkey
 
 #create a private key for agentd
 mkdir -p $agentd_dir/priv
+mkdir -p $agentd_dir/pub
 cd $agentd_dir/priv
 $vctool_binary -N -o agentd.priv keygen
 $vctool_binary -k agentd.priv -o agentd.pub pubkey
 chown veloagent:veloagent agentd.priv
 cp agentd.pub $testdir
+cp $testdir/handshake.pub $agentd_dir/pub
+chown veloagent:veloagent $agentd_dir/pub/handshake.pub
 
 cd ..
 echo "private key priv/agentd.priv" >> etc/agentd.conf
+echo "" >> etc/agentd.conf
+echo "authorized entities {" >> etc/agentd.conf
+echo "    pub/handshake.pub" >> etc/agentd.conf
+echo "}" >> etc/agentd.conf
 
 #verify that we can start agentd
 cd $agentd_dir
@@ -74,25 +81,8 @@ cd $testdir
 #copy the handshake test binary here
 cp $build_dir/src/test_handshake/test_handshake .
 
-#disable error exit
-set +e
-
 #run the test
 ./test_handshake
-handshake_result=$?
-
-if [ $handshake_result -eq 102 ]; then
-    echo "Unauthorized handshake denied as expected."
-elif [ $handshake_result -eq 0 ]; then
-    echo "ERROR: Unauthorized handshake should have failed."
-    exit 1
-else
-    echo "Some other client connection error has occurred."
-    exit 1
-fi
-
-#re-enable error exit
-set -e
 
 #get the agentd supervisor pid
 agentd_supervisor_pid=$(ps -ef | grep agentd | grep -v grep | grep supervisor | awk '{ print $2 }')
