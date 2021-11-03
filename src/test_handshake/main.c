@@ -8,6 +8,7 @@
 
 #include <fcntl.h>
 #include <stdio.h>
+#include <helpers/cert_helpers.h>
 #include <rcpr/resource.h>
 #include <rcpr/uuid.h>
 #include <vcblockchain/entity_cert.h>
@@ -36,10 +37,10 @@ int main(int argc, char* argv[])
     (void)argc;
     (void)argv;
 
-    int retval, release_retval, fd, fd2;
+    int retval, release_retval, fd2;
     allocator_options_t alloc_opts;
     vccrypt_suite_options_t suite;
-    vccrypt_buffer_t cert, cert2, key_nonce, challenge_nonce, server_pubkey,
+    vccrypt_buffer_t cert2, key_nonce, challenge_nonce, server_pubkey,
                      server_challenge_nonce, shared_secret;
     vcblockchain_entity_private_cert* client_priv;
     vcblockchain_entity_public_cert* server_pub;
@@ -77,58 +78,17 @@ int main(int argc, char* argv[])
         goto cleanup_crypto_suite;
     }
 
-    /* stat the private key. */
-    file_stat_st fst;
-    retval = file_stat(&file, "handshake.priv", &fst);
-    if (VCTOOL_STATUS_SUCCESS != retval)
-    {
-        fprintf(stderr, "Could not stat handshake.priv.\n");
-        retval = 3;
-        goto cleanup_file;
-    }
-
-    /* create the certificate buffer. */
-    size_t file_size = fst.fst_size;
-    retval = vccrypt_buffer_init(&cert, suite.alloc_opts, file_size);
-    if (VCCRYPT_STATUS_SUCCESS != retval)
-    {
-        fprintf(stderr, "Could not create certificate buffer.\n");
-        retval = 4;
-        goto cleanup_file;
-    }
-
-    /* open file. */
+    /* read the private key. */
     retval =
-        file_open(
-            &file, &fd, "handshake.priv", O_RDONLY, 0);
-    if (VCTOOL_STATUS_SUCCESS != retval)
+        entity_private_certificate_create_from_file(
+            &client_priv, &file, &suite, "handshake.priv");
+    if (STATUS_SUCCESS != retval)
     {
-        fprintf(stderr, "Could not open handshake.priv for reading.\n");
-        retval = 5;
-        goto cleanup_cert;
-    }
-
-    /* read contents into certificate buffer. */
-    size_t read_bytes;
-    retval = file_read(&file, fd, cert.data, cert.size, &read_bytes);
-    if (VCTOOL_STATUS_SUCCESS != retval || read_bytes != cert.size)
-    {
-        fprintf(stderr, "Error reading from handshake.priv.\n");
-        retval = 6;
-        goto cleanup_fd;
-    }
-
-    /* decode private certificate. */
-    retval =
-        vcblockchain_entity_private_cert_decode(&client_priv, &suite, &cert);
-    if (VCBLOCKCHAIN_STATUS_SUCCESS != retval)
-    {
-        fprintf(stderr, "Error decoding private certificate.\n");
-        retval = 7;
-        goto cleanup_fd;
+        goto cleanup_file;
     }
 
     /* stat the public key. */
+    file_stat_st fst;
     retval = file_stat(&file, "agentd.pub", &fst);
     if (VCTOOL_STATUS_SUCCESS != retval)
     {
@@ -138,7 +98,7 @@ int main(int argc, char* argv[])
     }
 
     /* create the certificate buffer. */
-    file_size = fst.fst_size;
+    size_t file_size = fst.fst_size;
     retval = vccrypt_buffer_init(&cert2, suite.alloc_opts, file_size);
     if (VCCRYPT_STATUS_SUCCESS != retval)
     {
@@ -159,6 +119,7 @@ int main(int argc, char* argv[])
     }
 
     /* read contents into certificate buffer. */
+    size_t read_bytes;
     retval = file_read(&file, fd2, cert2.data, cert2.size, &read_bytes);
     if (VCTOOL_STATUS_SUCCESS != retval || read_bytes != cert2.size)
     {
@@ -169,7 +130,7 @@ int main(int argc, char* argv[])
 
     /* decode public certificate. */
     retval =
-        vcblockchain_entity_public_cert_decode(&server_pub, &suite, &cert);
+        vcblockchain_entity_public_cert_decode(&server_pub, &suite, &cert2);
     if (VCBLOCKCHAIN_STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error decoding public certificate.\n");
@@ -294,12 +255,6 @@ cleanup_client_priv:
     {
         retval = release_retval;
     }
-
-cleanup_fd:
-    file_close(&file, fd);
-
-cleanup_cert:
-    dispose((disposable_t*)&cert);
 
 cleanup_file:
     dispose((disposable_t*)&file);
