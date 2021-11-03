@@ -182,7 +182,7 @@ int main(int argc, char* argv[])
         ssock_init_from_host_address(&sock, "127.0.0.1", 4931);
     if (VCBLOCKCHAIN_STATUS_SUCCESS != retval)
     {
-        fprintf(stderr, "Error connectiong to agentd.\n");
+        fprintf(stderr, "Error connecting to agentd.\n");
         retval = 13;
         goto cleanup_server_pub;
     }
@@ -235,7 +235,10 @@ int main(int argc, char* argv[])
     if (VCBLOCKCHAIN_STATUS_SUCCESS != retval
      || VCBLOCKCHAIN_STATUS_SUCCESS != status)
     {
-        fprintf(stderr, "Error receiving handshake response from agentd.\n");
+        fprintf(
+            stderr,
+            "Error receiving handshake response from agentd (%x) (%x).\n",
+            retval, status);
         retval = 102;
         goto cleanup_handshake_req;
     }
