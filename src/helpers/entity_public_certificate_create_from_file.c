@@ -1,7 +1,7 @@
 /**
- * \file helpers/entity_private_certificate_create_from_file.c
+ * \file helpers/entity_public_certificate_create_from_file.c
  *
- * \brief Create an entity private certificate from a file.
+ * \brief Create an entity public certificate from a file.
  *
  * \copyright 2021 Velo Payments, Inc.  All rights reserved.
  */
@@ -12,15 +12,15 @@
 #include <vcblockchain/error_codes.h>
 
 /**
- * \brief Read a private key and create an entity private certificate instance.
+ * \brief Read a public key and create an entity public certificate instance.
  *
- * \param cert          Pointer to the entity private certificate pointer that
+ * \param cert          Pointer to the entity public certificate pointer that
  *                      will receive this instance on success.
  * \param file          The OS file abstraction to use for this operation.
  * \param suite         The crypto suite to use for this operation.
  * \param filename      The name of the file that holds the certificate.
  *
- * \note On success, an entity private certificate instance is created. This is
+ * \note On success, an entity public certificate instance is created. This is
  * owned by the caller.  When no longer needed, the caller should call
  * \ref resource_release on its resource handle to release the resource.
  *
@@ -28,8 +28,8 @@
  *      - STATUS_SUCCESS on success.
  *      - a non-zero error code on failure.
  */
-status entity_private_certificate_create_from_file(
-    vcblockchain_entity_private_cert** cert, file* file,
+status entity_public_certificate_create_from_file(
+    vcblockchain_entity_public_cert** cert, file* file,
     vccrypt_suite_options_t* suite, const char* filename)
 {
     int retval, fd;
@@ -80,12 +80,12 @@ status entity_private_certificate_create_from_file(
         goto cleanup_fd;
     }
 
-    /* decode private certificate. */
+    /* decode public certificate. */
     retval =
-        vcblockchain_entity_private_cert_decode(cert, suite, &buf);
+        vcblockchain_entity_public_cert_decode(cert, suite, &buf);
     if (VCBLOCKCHAIN_STATUS_SUCCESS != retval)
     {
-        fprintf(stderr, "Error decoding private certificate.\n");
+        fprintf(stderr, "Error decoding public certificate.\n");
         retval = 7;
         goto cleanup_fd;
     }
