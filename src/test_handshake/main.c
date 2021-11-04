@@ -14,6 +14,7 @@
 #include <vcblockchain/entity_cert.h>
 #include <vcblockchain/error_codes.h>
 #include <vcblockchain/protocol.h>
+#include <vcblockchain/protocol/data.h>
 #include <vcblockchain/ssock.h>
 #include <vccrypt/suite.h>
 #include <vctool/file.h>
@@ -41,14 +42,14 @@ int main(int argc, char* argv[])
     allocator_options_t alloc_opts;
     vccrypt_suite_options_t suite;
     vccrypt_buffer_t key_nonce, challenge_nonce, server_pubkey,
-                     server_challenge_nonce, shared_secret;
+                     server_challenge_nonce, shared_secret, response;
     vcblockchain_entity_private_cert* client_priv;
     vcblockchain_entity_public_cert* server_pub;
     file file;
     ssock sock;
     const rcpr_uuid* client_id;
     vpr_uuid server_id;
-    uint32_t offset, status;
+    uint32_t offset, status, request_id;
     uint64_t client_iv, server_iv;
     const vccrypt_buffer_t* client_pubkey;
     const vccrypt_buffer_t* client_privkey;
@@ -162,7 +163,7 @@ int main(int argc, char* argv[])
         goto cleanup_handshake_req;
     }
 
-    /* send handshake acknowledge. */
+    /* send handshake acknowledge request. */
     retval =
         vcblockchain_protocol_sendreq_handshake_ack(
             &sock, &suite, &client_iv, &server_iv, &shared_secret,
@@ -174,9 +175,51 @@ int main(int argc, char* argv[])
         goto cleanup_handshake_resp;
     }
 
+    /* read a response. */
+    retval =
+        vcblockchain_protocol_recvresp(
+            &sock, &suite, &server_iv, &shared_secret, &response);
+    if (STATUS_SUCCESS != retval)
+    {
+        fprintf(stderr, "Error getting handshake ack response.\n");
+        retval = 104;
+        goto cleanup_handshake_resp;
+    }
+
+    /* decode the response header. */
+    retval =
+        vcblockchain_protocol_response_decode_header(
+            &request_id, &offset, &status, &response);
+    if (STATUS_SUCCESS != retval)
+    {
+        fprintf(stderr, "Error decoding response header.\n");
+        retval = 105;
+        goto cleanup_resp;
+    }
+
+    /* verify that the request id matches. */
+    if (PROTOCOL_REQ_ID_HANDSHAKE_ACKNOWLEDGE != request_id)
+    {
+        fprintf(stderr, "Unexpected request id (%x).\n", request_id);
+        retval = 106;
+        goto cleanup_resp;
+    }
+
+    /* verify that the status was successful. */
+    if (STATUS_SUCCESS != status)
+    {
+        fprintf(
+            stderr, "Handshake was not acknowledged by server (%x).\n", status);
+        retval = 107;
+        goto cleanup_resp;
+    }
+
     /* success. */
     retval = 0;
-    goto cleanup_handshake_resp;
+    goto cleanup_resp;
+
+cleanup_resp:
+    dispose((disposable_t*)&response);
 
 cleanup_handshake_resp:
     dispose((disposable_t*)&server_pubkey);
