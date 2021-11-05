@@ -141,6 +141,16 @@ int main(int argc, char* argv[])
         goto cleanup_resp;
     }
 
+    /* verify offset. */
+    if (EXPECTED_OFFSET != offset)
+    {
+        fprintf(
+            stderr, "mismatched offsets. (%x) vs (%x)", offset,
+            EXPECTED_OFFSET);
+        retval = 205;
+        goto cleanup_resp;
+    }
+
     /* decode the response. */
     retval =
         vcblockchain_protocol_decode_resp_latest_block_id_get(
@@ -148,7 +158,7 @@ int main(int argc, char* argv[])
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "could not decode response. (%x)\n", status);
-        retval = 205;
+        retval = 206;
         goto cleanup_resp;
     }
 
@@ -158,7 +168,7 @@ int main(int argc, char* argv[])
             16))
     {
         fprintf(stderr, "latest block id does not match root block.\n");
-        retval = 206;
+        retval = 207;
         goto cleanup_decoded_resp;
     }
 
