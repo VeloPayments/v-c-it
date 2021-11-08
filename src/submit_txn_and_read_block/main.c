@@ -58,7 +58,6 @@ int main(int argc, char* argv[])
     vccert_builder_options_t builder_opts;
     vccrypt_buffer_t shared_secret;
     vccrypt_buffer_t cert_buffer;
-    vccrypt_buffer_t submit_response;
     vccrypt_buffer_t get_next_block_id_response;
     vccrypt_buffer_t get_block_response;
     /*
@@ -70,7 +69,6 @@ int main(int argc, char* argv[])
     file file;
     ssock sock;
     uint64_t client_iv, server_iv;
-    uint32_t expected_submit_offset = 0x1337;
     uint32_t expected_get_next_block_id_offset = 0x3133;
     uint32_t expected_block_get_offset = 0x1234;
     vpr_uuid txn_uuid, artifact_uuid;
@@ -152,62 +150,14 @@ int main(int argc, char* argv[])
         goto cleanup_connection;
     }
 
-    /* submit this certificate. */
+    /* submit and verify the certificate. */
     retval =
-        vcblockchain_protocol_sendreq_transaction_submit(
-            &sock, &suite, &client_iv, &shared_secret, expected_submit_offset,
-            &txn_uuid, &artifact_uuid, cert_buffer.data, cert_buffer.size);
+        submit_and_verify_txn(
+            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn_uuid,
+            &artifact_uuid, &cert_buffer);
     if (STATUS_SUCCESS != retval)
     {
-        fprintf(stderr, "Error submitting transaction.\n");
-        retval = 201;
         goto cleanup_transaction_cert;
-    }
-
-    /* get response from submit. */
-    retval =
-        vcblockchain_protocol_recvresp(
-            &sock, &suite, &server_iv, &shared_secret, &submit_response);
-    if (STATUS_SUCCESS != retval)
-    {
-        fprintf(stderr, "Error receiving response from submit.\n");
-        retval = 202;
-        goto cleanup_transaction_cert;
-    }
-
-    /* decode the response header. */
-    retval =
-        vcblockchain_protocol_response_decode_header(
-            &request_id, &offset, &status, &submit_response);
-    if (STATUS_SUCCESS != retval)
-    {
-        fprintf(stderr, "Error decoding response from submit.\n");
-        retval = 203;
-        goto cleanup_submit_response;
-    }
-
-    /* verify that the request id matches. */
-    if (PROTOCOL_REQ_ID_TRANSACTION_SUBMIT != request_id)
-    {
-        fprintf(stderr, "Unexpected request id (%x).\n", request_id);
-        retval = 204;
-        goto cleanup_submit_response;
-    }
-
-    /* verify that the status was successful. */
-    if (STATUS_SUCCESS != status)
-    {
-        fprintf(stderr, "Unexpected submit status (%x).\n", status);
-        retval = 205;
-        goto cleanup_submit_response;
-    }
-
-    /* verify that the offset is correct. */
-    if (expected_submit_offset != offset)
-    {
-        fprintf(stderr, "Unexpected submit offset (%x).\n", offset);
-        retval = 207;
-        goto cleanup_submit_response;
     }
 
     /* sleep 5 seconds. */
@@ -224,7 +174,7 @@ int main(int argc, char* argv[])
     {
         fprintf(stderr, "Failed to send get next id req. (%x).\n", retval);
         retval = 208;
-        goto cleanup_submit_response;
+        goto cleanup_transaction_cert;
     }
 
     /* get response. */
@@ -236,7 +186,7 @@ int main(int argc, char* argv[])
     {
         fprintf(stderr, "Failed to receive get next block response.\n");
         retval = 209;
-        goto cleanup_submit_response;
+        goto cleanup_transaction_cert;
     }
 
     /* decode the response header. */
@@ -382,9 +332,6 @@ cleanup_get_next_block_id_resp:
 
 cleanup_get_next_block_id_response:
     dispose((disposable_t*)&get_next_block_id_response);
-
-cleanup_submit_response:
-    dispose((disposable_t*)&submit_response);
 
 cleanup_transaction_cert:
     dispose((disposable_t*)&cert_buffer);

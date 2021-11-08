@@ -54,3 +54,26 @@ status agentd_connection_init(
     vccrypt_buffer_t* shared_secret, uint64_t* client_iv, uint64_t* server_iv,
     file* file, vccrypt_suite_options_t* suite, const char* hostaddr,
     unsigned int hostport, const char* clientpriv, const char* serverpub);
+
+/**
+ * \brief Submit and verify the response from submitting a transaction.
+ *
+ * \param sock              The socket connection with agentd.
+ * \param suite             The crypto suite to use for this operation.
+ * \param client_iv         The client-side initialization vector counter.
+ * \param server_iv         The server-side initialization vector counter.
+ * \param shared_secret     The computed shared secret for this session.
+ * \param txn_uuid          The uuid of this transaction.
+ * \param artifact_uuid     The uuid of the artifact modified by this
+ *                          transaction.
+ * \param cert              The certificate contents of this transaction.
+ *
+ * \returns a status code indicating success or failure.
+ *      - STATUS_SUCCESS on success.
+ *      - a non-zero error code on failure.
+ */
+status submit_and_verify_txn(
+    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
+    uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
+    const vpr_uuid* txn_uuid, const vpr_uuid* artifact_uuid,
+    const vccrypt_buffer_t* cert);
