@@ -10,6 +10,7 @@
 #include <helpers/cert_helpers.h>
 #include <helpers/conn_helpers.h>
 #include <vcblockchain/protocol.h>
+#include <vcblockchain/protocol/data.h>
 #include <vcblockchain/protocol/serialization.h>
 #include <vccert/certificate_types.h>
 #include <vpr/allocator/malloc_allocator.h>
@@ -37,7 +38,6 @@ int main(int argc, char* argv[])
     vccert_builder_options_t builder_opts;
     vccrypt_buffer_t shared_secret;
     vccrypt_buffer_t cert_buffer;
-    vccrypt_buffer_t get_next_block_id_response;
     vccrypt_buffer_t get_block_response;
     /*
     vccrypt_buffer_t get_artifact_response;
@@ -48,12 +48,11 @@ int main(int argc, char* argv[])
     file file;
     ssock sock;
     uint64_t client_iv, server_iv;
-    uint32_t expected_get_next_block_id_offset = 0x3133;
     uint32_t expected_block_get_offset = 0x1234;
     vpr_uuid txn_uuid, artifact_uuid;
     uint32_t request_id, status, offset;
-    protocol_resp_block_next_id_get get_next_block_id_resp;
     protocol_resp_block_get block_get_resp;
+    vpr_uuid next_block_id;
 
     /* register the velo v1 suite. */
     vccrypt_suite_register_velo_v1();
@@ -143,89 +142,27 @@ int main(int argc, char* argv[])
     printf("Sleeping for 5 seconds while txn is canonized.\n");
     sleep(5);
 
-    /* get next block id from root block. */
+    /* get the root block's next block id. */
     retval =
-        vcblockchain_protocol_sendreq_block_next_id_get(
-            &sock, &suite, &client_iv, &shared_secret,
-            expected_get_next_block_id_offset,
-            (const vpr_uuid*)vccert_certificate_type_uuid_root_block);
+        get_and_verify_next_block_id(
+            &sock, &suite, &client_iv, &server_iv, &shared_secret,
+            (const vpr_uuid*)vccert_certificate_type_uuid_root_block,
+            &next_block_id);
     if (STATUS_SUCCESS != retval)
     {
-        fprintf(stderr, "Failed to send get next id req. (%x).\n", retval);
-        retval = 208;
         goto cleanup_transaction_cert;
-    }
-
-    /* get response. */
-    retval =
-        vcblockchain_protocol_recvresp(
-            &sock, &suite, &server_iv, &shared_secret,
-            &get_next_block_id_response);
-    if (STATUS_SUCCESS != retval)
-    {
-        fprintf(stderr, "Failed to receive get next block response.\n");
-        retval = 209;
-        goto cleanup_transaction_cert;
-    }
-
-    /* decode the response header. */
-    retval =
-        vcblockchain_protocol_response_decode_header(
-            &request_id, &offset, &status, &get_next_block_id_response);
-    if (STATUS_SUCCESS != retval)
-    {
-        fprintf(stderr, "Error decoding response from get_next_block_id.\n");
-        retval = 210;
-        goto cleanup_get_next_block_id_response;
-    }
-
-    /* verify that the request id matches. */
-    if (PROTOCOL_REQ_ID_BLOCK_ID_GET_NEXT != request_id)
-    {
-        fprintf(stderr, "Unexpected request id (%x).\n", request_id);
-        retval = 211;
-        goto cleanup_get_next_block_id_response;
-    }
-
-    /* verify that the status was successful. */
-    if (STATUS_SUCCESS != status)
-    {
-        fprintf(stderr, "Unexpected get next block id status (%x).\n", status);
-        retval = 212;
-        goto cleanup_get_next_block_id_response;
-    }
-
-    /* verify that the offset is correct. */
-    if (expected_get_next_block_id_offset != offset)
-    {
-        fprintf(stderr, "Unexpected get next block id offset (%x).\n", offset);
-        retval = 213;
-        goto cleanup_get_next_block_id_response;
-    }
-
-    /* decode the response. */
-    retval =
-        vcblockchain_protocol_decode_resp_block_next_id_get(
-            &get_next_block_id_resp, get_next_block_id_response.data,
-            get_next_block_id_response.size);
-    if (STATUS_SUCCESS != retval)
-    {
-        fprintf(
-            stderr, "Could not decode get next block response (%x).\n", retval);
-        retval = 214;
-        goto cleanup_get_next_block_id_response;
     }
 
     /* query block by id. */
     retval =
         vcblockchain_protocol_sendreq_block_get(
             &sock, &suite, &client_iv, &shared_secret,
-            expected_block_get_offset, &get_next_block_id_resp.next_block_id);
+            expected_block_get_offset, &next_block_id);
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Could not send get block id req (%x).\n", retval);
         retval = 215;
-        goto cleanup_get_next_block_id_resp;
+        goto cleanup_transaction_cert;
     }
 
     /* get response. */
@@ -237,7 +174,7 @@ int main(int argc, char* argv[])
     {
         fprintf(stderr, "Failed to receive get next block response.\n");
         retval = 216;
-        goto cleanup_get_next_block_id_resp;
+        goto cleanup_transaction_cert;
     }
 
     /* decode the response header. */
@@ -305,12 +242,6 @@ cleanup_block_get_resp:
 
 cleanup_get_block_response:
     dispose((disposable_t*)&get_block_response);
-
-cleanup_get_next_block_id_resp:
-    dispose((disposable_t*)&get_next_block_id_resp);
-
-cleanup_get_next_block_id_response:
-    dispose((disposable_t*)&get_next_block_id_response);
 
 cleanup_transaction_cert:
     dispose((disposable_t*)&cert_buffer);
