@@ -7,6 +7,7 @@
  */
 
 #include <helpers/cert_helpers.h>
+#include <helpers/status_codes.h>
 #include <string.h>
 #include <vccert/fields.h>
 

@@ -7,6 +7,7 @@
  */
 
 #include <helpers/cert_helpers.h>
+#include <helpers/status_codes.h>
 #include <stdio.h>
 #include <vccert/fields.h>
 #include <vccrypt/compare.h>
@@ -45,7 +46,7 @@ status find_transaction_in_block(
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error creating parser instance.\n");
-        retval = 240;
+        retval = ERROR_PARSER_INIT;
         goto done;
     }
 
@@ -57,13 +58,13 @@ status find_transaction_in_block(
     if (VCCERT_ERROR_PARSER_FIELD_NEXT_FIELD_NOT_FOUND == retval)
     {
         fprintf(stderr, "transaction not found.\n");
-        retval = 241;
+        retval = ERROR_TXN_NOT_FOUND;
         goto cleanup_parser;
     }
     else if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "error searching for field.\n");
-        retval = 241;
+        retval = ERROR_TXN_SEARCH_FAILED;
         goto cleanup_parser;
     }
 
@@ -88,7 +89,7 @@ status find_transaction_in_block(
 
     /* if we've made it this far, the transaction wasn't found. */
     fprintf(stderr, "transaction not found.\n");
-    retval = 241;
+    retval = ERROR_TXN_NOT_FOUND;
     goto cleanup_parser;
 
 cleanup_parser:
