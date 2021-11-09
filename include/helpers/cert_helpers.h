@@ -12,7 +12,10 @@
 #include <rcpr/uuid.h>
 #include <vcblockchain/entity_cert.h>
 #include <vccert/builder.h>
+#include <vccert/parser.h>
 #include <vctool/file.h>
+
+#if !defined(__cplusplus)
 
 /**
  * \brief Read a private key and create an entity private certificate instance.
@@ -82,3 +85,22 @@ status create_transaction_cert(
     RCPR_SYM(rcpr_uuid)* artifact_uuid, vccert_builder_options_t* builder_opts,
     const RCPR_SYM(rcpr_uuid)* signer_id,
     const vccrypt_buffer_t* client_privkey);
+
+/**
+ * \brief Attempt to find a transaction in a block, using the raw transaction
+ * certificate.
+ *
+ * \param block_cert        Pointer to a buffer holding the block certificate.
+ * \param txn_cert          Pointer to a buffer holding the transaction cert.
+ * \param parser_options    Parser options structure to use to create a parser
+ *                          instance.
+ *
+ * \returns a status code indicating success or failure.
+ *      - STATUS_SUCCESS on success (the txn was found).
+ *      - a non-zero error code on failure.
+ */
+status find_transaction_in_block(
+    const vccrypt_buffer_t* block_cert, const vccrypt_buffer_t* txn_cert,
+    vccert_parser_options_t* parser_options);
+
+#endif /*!defined(__cplusplus)*/

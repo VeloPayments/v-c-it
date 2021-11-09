@@ -14,9 +14,24 @@
 #include <vcblockchain/protocol/serialization.h>
 #include <vccert/certificate_types.h>
 #include <vpr/allocator/malloc_allocator.h>
+#include <vpr/parameters.h>
 
 RCPR_IMPORT_resource;
 RCPR_IMPORT_uuid;
+
+/* forward decls */
+static bool dummy_txn_resolver(
+    void* options, void* parser, const uint8_t* artifact_id,
+    const uint8_t* txn_id, vccrypt_buffer_t* output_buffer, bool* trusted);
+static int32_t dummy_artifact_state_resolver(
+    void* options, void* parser, const uint8_t* artifact_id,
+    vccrypt_buffer_t* txn_id);
+static int dummy_contract_resolver(
+    void* options, void* parser, const uint8_t* type_id,
+    const uint8_t* artifact_id, vccert_contract_closure_t* closure);
+static bool dummy_key_resolver(
+    void* options, void* parser, uint64_t height, const uint8_t* entity_id,
+    vccrypt_buffer_t* pubenckey_buffer, vccrypt_buffer_t* pubsignkey_buffer);
 
 /**
  * \brief Main entry point for the submit transaction and read block test
@@ -36,6 +51,7 @@ int main(int argc, char* argv[])
     allocator_options_t alloc_opts;
     vccrypt_suite_options_t suite;
     vccert_builder_options_t builder_opts;
+    vccert_parser_options_t parser_options;
     vccrypt_buffer_t shared_secret;
     vccrypt_buffer_t cert_buffer;
     vccrypt_buffer_t block_cert;
@@ -73,13 +89,26 @@ int main(int argc, char* argv[])
         goto cleanup_crypto_suite;
     }
 
+    /* initialize parser options. */
+    retval =
+        vccert_parser_options_init(
+            &parser_options, &alloc_opts, &suite, &dummy_txn_resolver,
+            &dummy_artifact_state_resolver, &dummy_contract_resolver,
+            &dummy_key_resolver, NULL);
+    if (VCCERT_STATUS_SUCCESS != retval)
+    {
+        fprintf(stderr, "Error creating file abstraction layer.\n");
+        retval = 239;
+        goto cleanup_builder_opts;
+    }
+
     /* create OS level file abstraction. */
     retval = file_init(&file);
     if (VCTOOL_STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error creating file abstraction layer.\n");
         retval = 2;
-        goto cleanup_builder_opts;
+        goto cleanup_parser_opts;
     }
 
     /* connect to agentd. */
@@ -157,14 +186,17 @@ int main(int argc, char* argv[])
         goto cleanup_transaction_cert;
     }
 
-    /* TODO - iterate through block. */
-    /* TODO - verify our submitted transaction matches. */
-    /* TODO - get artifact by id. */
-    /* TODO - get response and verify / etc. */
-    /* TODO - decode artifact stuff and verify it matches. */
-    /* TODO - get transaction by id. */
-    /* TODO - get response and verify / etc. */
-    /* TODO - decode transaction stuff and verify it matches. */
+    /* find the transaction in the block. */
+    retval =
+        find_transaction_in_block(
+            &block_cert, &cert_buffer, &parser_options);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_block_cert;
+    }
+
+    /* TODO - get and verify artifact by id. */
+    /* TODO - get and verify transaction by id. */
 
     /* TODO - here. */
     retval = STATUS_SUCCESS;
@@ -191,6 +223,9 @@ cleanup_connection:
 cleanup_file:
     dispose((disposable_t*)&file);
 
+cleanup_parser_opts:
+    dispose((disposable_t*)&parser_options);
+
 cleanup_builder_opts:
     dispose((disposable_t*)&builder_opts);
 
@@ -201,4 +236,49 @@ cleanup_allocator:
     dispose((disposable_t*)&alloc_opts);
 
     return retval;
+}
+
+/**
+ * \brief Dummy transaction resolver.
+ */
+static bool dummy_txn_resolver(
+    void* UNUSED(options), void* UNUSED(parser),
+    const uint8_t* UNUSED(artifact_id),
+    const uint8_t* UNUSED(txn_id), vccrypt_buffer_t* UNUSED(output_buffer),
+    bool* UNUSED(trusted))
+{
+    return false;
+}
+
+/**
+ * \brief Dummy artifact state resolver.
+ */
+static int32_t dummy_artifact_state_resolver(
+    void* UNUSED(options), void* UNUSED(parser),
+    const uint8_t* UNUSED(artifact_id), vccrypt_buffer_t* UNUSED(txn_id))
+{
+    return 0;
+}
+
+/**
+ * \brief Dummy contract resolver.
+ */
+static int dummy_contract_resolver(
+    void* UNUSED(options), void* UNUSED(parser), const uint8_t* UNUSED(type_id),
+    const uint8_t* UNUSED(artifact_id),
+    vccert_contract_closure_t* UNUSED(closure))
+{
+    return VCCERT_ERROR_PARSER_ATTEST_MISSING_CONTRACT;
+}
+
+/**
+ * \brief Dummy key resolver.
+ */
+static bool dummy_key_resolver(
+    void* UNUSED(options), void* UNUSED(parser), uint64_t UNUSED(height),
+    const uint8_t* UNUSED(entity_id),
+    vccrypt_buffer_t* UNUSED(pubenckey_buffer),
+    vccrypt_buffer_t* UNUSED(pubsignkey_buffer))
+{
+    return false;
 }
