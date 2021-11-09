@@ -77,3 +77,24 @@ status submit_and_verify_txn(
     uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
     const vpr_uuid* txn_uuid, const vpr_uuid* artifact_uuid,
     const vccrypt_buffer_t* cert);
+
+/**
+ * \brief Request the next block ID for a given block ID from the agentd
+ * instance.
+ *
+ * \param sock              The socket connection with agentd.
+ * \param suite             The crypto suite to use for this operation.
+ * \param client_iv         The client-side initialization vector counter.
+ * \param server_iv         The server-side initialization vector counter.
+ * \param shared_secret     The computed shared secret for this session.
+ * \param block_id          The block id to query.
+ * \param next_block_id     Variable to hold the next block id on success.
+ *
+ * \returns a status code indicating success or failure.
+ *      - STATUS_SUCCESS on success.
+ *      - a non-zero error code on failure.
+ */
+status get_and_verify_next_block_id(
+    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
+    uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
+    const vpr_uuid* block_id, vpr_uuid* next_block_id);
