@@ -38,21 +38,15 @@ int main(int argc, char* argv[])
     vccert_builder_options_t builder_opts;
     vccrypt_buffer_t shared_secret;
     vccrypt_buffer_t cert_buffer;
-    vccrypt_buffer_t get_block_response;
-    /*
-    vccrypt_buffer_t get_artifact_response;
-    vccrypt_buffer_t get_transaction_response;*/
+    vccrypt_buffer_t block_cert;
     vcblockchain_entity_private_cert* client_priv;
     const vccrypt_buffer_t* client_sign_priv;
     const rcpr_uuid* client_id;
     file file;
     ssock sock;
     uint64_t client_iv, server_iv;
-    uint32_t expected_block_get_offset = 0x1234;
     vpr_uuid txn_uuid, artifact_uuid;
-    uint32_t request_id, status, offset;
-    protocol_resp_block_get block_get_resp;
-    vpr_uuid next_block_id;
+    vpr_uuid next_block_id, prev_block_id;
 
     /* register the velo v1 suite. */
     vccrypt_suite_register_velo_v1();
@@ -153,75 +147,14 @@ int main(int argc, char* argv[])
         goto cleanup_transaction_cert;
     }
 
-    /* query block by id. */
+    /* get the new block. */
     retval =
-        vcblockchain_protocol_sendreq_block_get(
-            &sock, &suite, &client_iv, &shared_secret,
-            expected_block_get_offset, &next_block_id);
+        get_and_verify_block(
+            &sock, &suite, &client_iv, &server_iv, &shared_secret,
+            &next_block_id, &block_cert, &prev_block_id, &next_block_id);
     if (STATUS_SUCCESS != retval)
     {
-        fprintf(stderr, "Could not send get block id req (%x).\n", retval);
-        retval = 215;
         goto cleanup_transaction_cert;
-    }
-
-    /* get response. */
-    retval =
-        vcblockchain_protocol_recvresp(
-            &sock, &suite, &server_iv, &shared_secret,
-            &get_block_response);
-    if (STATUS_SUCCESS != retval)
-    {
-        fprintf(stderr, "Failed to receive get next block response.\n");
-        retval = 216;
-        goto cleanup_transaction_cert;
-    }
-
-    /* decode the response header. */
-    retval =
-        vcblockchain_protocol_response_decode_header(
-            &request_id, &offset, &status, &get_block_response);
-    if (STATUS_SUCCESS != retval)
-    {
-        fprintf(stderr, "Error decoding response from get_block.\n");
-        retval = 217;
-        goto cleanup_get_block_response;
-    }
-
-    /* verify that the request id matches. */
-    if (PROTOCOL_REQ_ID_BLOCK_BY_ID_GET != request_id)
-    {
-        fprintf(stderr, "Unexpected request id (%x).\n", request_id);
-        retval = 218;
-        goto cleanup_get_block_response;
-    }
-
-    /* verify that the status was successful. */
-    if (STATUS_SUCCESS != status)
-    {
-        fprintf(stderr, "Unexpected status (%x).\n", status);
-        retval = 219;
-        goto cleanup_get_block_response;
-    }
-
-    /* verify that the offset is correct. */
-    if (expected_block_get_offset != offset)
-    {
-        fprintf(stderr, "Unexpected offset (%x).\n", offset);
-        retval = 220;
-        goto cleanup_get_block_response;
-    }
-
-    /* decode block. */
-    retval =
-        vcblockchain_protocol_decode_resp_block_get(
-            &block_get_resp, &alloc_opts, get_block_response.data,
-            get_block_response.size);
-    if (STATUS_SUCCESS != retval)
-    {
-        fprintf(stderr, "Could not decode block get response. (%x)\n", retval);
-        retval = 221;
-        goto cleanup_get_block_response;
     }
 
     /* TODO - iterate through block. */
@@ -235,13 +168,10 @@ int main(int argc, char* argv[])
 
     /* TODO - here. */
     retval = STATUS_SUCCESS;
-    goto cleanup_block_get_resp;
+    goto cleanup_block_cert;
 
-cleanup_block_get_resp:
-    dispose((disposable_t*)&block_get_resp);
-
-cleanup_get_block_response:
-    dispose((disposable_t*)&get_block_response);
+cleanup_block_cert:
+    dispose((disposable_t*)&block_cert);
 
 cleanup_transaction_cert:
     dispose((disposable_t*)&cert_buffer);
