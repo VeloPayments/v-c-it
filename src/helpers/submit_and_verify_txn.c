@@ -6,6 +6,7 @@
  * \copyright 2021 Velo Payments, Inc.  All rights reserved.
  */
 
+#include <helpers/status_codes.h>
 #include <rcpr/status.h>
 #include <stdio.h>
 #include <vcblockchain/protocol.h>
@@ -57,7 +58,7 @@ status submit_and_verify_txn(
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error submitting transaction.\n");
-        retval = 201;
+        retval = ERROR_SEND_TXN_REQ;
         goto done;
     }
 
@@ -68,7 +69,7 @@ status submit_and_verify_txn(
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error receiving response from submit.\n");
-        retval = 202;
+        retval = ERROR_RECV_TXN_RESP;
         goto done;
     }
 
@@ -79,7 +80,7 @@ status submit_and_verify_txn(
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error decoding response from submit.\n");
-        retval = 203;
+        retval = ERROR_DECODE_TXN_RESP;
         goto cleanup_submit_response;
     }
 
@@ -87,7 +88,7 @@ status submit_and_verify_txn(
     if (PROTOCOL_REQ_ID_TRANSACTION_SUBMIT != request_id)
     {
         fprintf(stderr, "Unexpected request id (%x).\n", request_id);
-        retval = 204;
+        retval = ERROR_TXN_SUBMIT_REQUEST_ID;
         goto cleanup_submit_response;
     }
 
@@ -95,7 +96,7 @@ status submit_and_verify_txn(
     if (STATUS_SUCCESS != status)
     {
         fprintf(stderr, "Unexpected submit status (%x).\n", status);
-        retval = 205;
+        retval = ERROR_TXN_SUBMIT_STATUS;
         goto cleanup_submit_response;
     }
 
@@ -103,7 +104,7 @@ status submit_and_verify_txn(
     if (expected_submit_offset != offset)
     {
         fprintf(stderr, "Unexpected submit offset (%x).\n", offset);
-        retval = 207;
+        retval = ERROR_TXN_SUBMIT_OFFSET;
         goto cleanup_submit_response;
     }
 

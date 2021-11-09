@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <helpers/cert_helpers.h>
 #include <helpers/conn_helpers.h>
+#include <helpers/status_codes.h>
 #include <rcpr/resource.h>
 #include <rcpr/uuid.h>
 #include <stdio.h>
@@ -114,7 +115,7 @@ status agentd_connection_init(
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error connecting to agentd.\n");
-        retval = 13;
+        retval = ERROR_AGENTD_SOCKET_CONNECT;
         goto cleanup_server_cert;
     }
 
@@ -169,7 +170,7 @@ status agentd_connection_init(
     if (VCBLOCKCHAIN_STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error sending handshake request to agentd.\n");
-        retval = 101;
+        retval = ERROR_SEND_HANDSHAKE_REQ;
         goto cleanup_sock;
     }
 
@@ -185,7 +186,7 @@ status agentd_connection_init(
         fprintf(
             stderr,
             "Error receiving handshake response from agentd (%x).\n", retval);
-        retval = 102;
+        retval = ERROR_RECV_HANDSHAKE_RESP;
         goto cleanup_handshake_req;
     }
 
@@ -193,19 +194,7 @@ status agentd_connection_init(
     if (crypto_memcmp(server_id, &server_id_from_server, 16))
     {
         fprintf(stderr, "Server UUIDs do not match!\n");
-        retval = 103;
-        const uint8_t* v = (const uint8_t*)server_id;
-        for (int i = 0; i < 16; ++i)
-        {
-            fprintf(stderr, "%02x", v[i]);
-        }
-        fprintf(stderr, "\n");
-        v = (const uint8_t*)&server_id_from_server;
-        for (int i = 0; i < 16; ++i)
-        {
-            fprintf(stderr, "%02x", v[i]);
-        }
-        fprintf(stderr, "\n");
+        retval = ERROR_SERVER_ID_MISMATCH;
         goto cleanup_handshake_resp;
     }
 
@@ -216,7 +205,7 @@ status agentd_connection_init(
             server_pubkey->size))
     {
         fprintf(stderr, "Server public keys do not match!\n");
-        retval = 104;
+        retval = ERROR_SERVER_KEY_MISMATCH;
         goto cleanup_handshake_resp;
     }
 
@@ -228,7 +217,7 @@ status agentd_connection_init(
     if (VCBLOCKCHAIN_STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error sending handshake ack to agentd.\n");
-        retval = 103;
+        retval = ERROR_SEND_HANDSHAKE_ACK;
         goto cleanup_handshake_resp;
     }
 
@@ -239,7 +228,7 @@ status agentd_connection_init(
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error getting handshake ack response.\n");
-        retval = 104;
+        retval = ERROR_RECV_HANDSHAKE_ACK;
         goto cleanup_handshake_resp;
     }
 
@@ -250,7 +239,7 @@ status agentd_connection_init(
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error decoding response header.\n");
-        retval = 105;
+        retval = ERROR_DECODE_HANDSHAKE_ACK;
         goto cleanup_resp;
     }
 
@@ -258,7 +247,7 @@ status agentd_connection_init(
     if (PROTOCOL_REQ_ID_HANDSHAKE_ACKNOWLEDGE != request_id)
     {
         fprintf(stderr, "Unexpected request id (%x).\n", request_id);
-        retval = 106;
+        retval = ERROR_HANDSHAKE_ACK_REQUEST_ID;
         goto cleanup_resp;
     }
 
@@ -267,7 +256,7 @@ status agentd_connection_init(
     {
         fprintf(
             stderr, "Handshake was not acknowledged by server (%x).\n", status);
-        retval = 107;
+        retval = ERROR_HANDSHAKE_ACK_STATUS;
         goto cleanup_resp;
     }
 

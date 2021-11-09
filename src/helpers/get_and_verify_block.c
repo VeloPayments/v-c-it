@@ -7,6 +7,7 @@
  */
 
 #include <helpers/conn_helpers.h>
+#include <helpers/status_codes.h>
 #include <stdio.h>
 #include <string.h>
 #include <vcblockchain/protocol.h>
@@ -61,8 +62,8 @@ status get_and_verify_block(
             expected_block_get_offset, block_id);
     if (STATUS_SUCCESS != retval)
     {
-        fprintf(stderr, "Could not send get block id req (%x).\n", retval);
-        retval = 215;
+        fprintf(stderr, "Could not send get block req (%x).\n", retval);
+        retval = ERROR_SEND_BLOCK_REQ;
         goto done;
     }
 
@@ -72,8 +73,8 @@ status get_and_verify_block(
             sock, suite, server_iv, shared_secret, &get_block_response);
     if (STATUS_SUCCESS != retval)
     {
-        fprintf(stderr, "Failed to receive get next block response.\n");
-        retval = 216;
+        fprintf(stderr, "Failed to receive get block response.\n");
+        retval = ERROR_RECV_BLOCK_RESP;
         goto done;
     }
 
@@ -84,7 +85,7 @@ status get_and_verify_block(
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error decoding response from get_block.\n");
-        retval = 217;
+        retval = ERROR_DECODE_BLOCK_RESP;
         goto cleanup_get_block_response;
     }
 
@@ -92,7 +93,7 @@ status get_and_verify_block(
     if (PROTOCOL_REQ_ID_BLOCK_BY_ID_GET != request_id)
     {
         fprintf(stderr, "Unexpected request id (%x).\n", request_id);
-        retval = 218;
+        retval = ERROR_GET_BLOCK_REQUEST_ID;
         goto cleanup_get_block_response;
     }
 
@@ -100,7 +101,7 @@ status get_and_verify_block(
     if (STATUS_SUCCESS != status)
     {
         fprintf(stderr, "Unexpected status (%x).\n", status);
-        retval = 219;
+        retval = ERROR_GET_BLOCK_STATUS;
         goto cleanup_get_block_response;
     }
 
@@ -108,7 +109,7 @@ status get_and_verify_block(
     if (expected_block_get_offset != offset)
     {
         fprintf(stderr, "Unexpected offset (%x).\n", offset);
-        retval = 220;
+        retval = ERROR_GET_BLOCK_OFFSET;
         goto cleanup_get_block_response;
     }
 
@@ -120,7 +121,7 @@ status get_and_verify_block(
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Could not decode block get response. (%x)\n", retval);
-        retval = 221;
+        retval = ERROR_DECODE_BLOCK_RESP_DATA;
         goto cleanup_get_block_response;
     }
 

@@ -7,6 +7,7 @@
  */
 
 #include <helpers/conn_helpers.h>
+#include <helpers/status_codes.h>
 #include <stdio.h>
 #include <string.h>
 #include <vcblockchain/protocol.h>
@@ -56,7 +57,7 @@ status get_and_verify_next_block_id(
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Failed to send get next id req. (%x).\n", retval);
-        retval = 208;
+        retval = ERROR_SEND_NEXT_BLOCK_ID_REQ;
         goto done;
     }
 
@@ -68,7 +69,7 @@ status get_and_verify_next_block_id(
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Failed to receive get next block response.\n");
-        retval = 209;
+        retval = ERROR_RECV_NEXT_BLOCK_ID_RESP;
         goto done;
     }
 
@@ -79,7 +80,7 @@ status get_and_verify_next_block_id(
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error decoding response from get_next_block_id.\n");
-        retval = 210;
+        retval = ERROR_DECODE_NEXT_BLOCK_ID;
         goto cleanup_get_next_block_id_response;
     }
 
@@ -87,7 +88,7 @@ status get_and_verify_next_block_id(
     if (PROTOCOL_REQ_ID_BLOCK_ID_GET_NEXT != request_id)
     {
         fprintf(stderr, "Unexpected request id (%x).\n", request_id);
-        retval = 211;
+        retval = ERROR_NEXT_BLOCK_ID_REQUEST_ID;
         goto cleanup_get_next_block_id_response;
     }
 
@@ -95,7 +96,7 @@ status get_and_verify_next_block_id(
     if (STATUS_SUCCESS != status)
     {
         fprintf(stderr, "Unexpected get next block id status (%x).\n", status);
-        retval = 212;
+        retval = ERROR_NEXT_BLOCK_ID_STATUS;
         goto cleanup_get_next_block_id_response;
     }
 
@@ -103,7 +104,7 @@ status get_and_verify_next_block_id(
     if (expected_get_next_block_id_offset != offset)
     {
         fprintf(stderr, "Unexpected get next block id offset (%x).\n", offset);
-        retval = 213;
+        retval = ERROR_NEXT_BLOCK_ID_OFFSET;
         goto cleanup_get_next_block_id_response;
     }
 
@@ -116,7 +117,7 @@ status get_and_verify_next_block_id(
     {
         fprintf(
             stderr, "Could not decode get next block response (%x).\n", retval);
-        retval = 214;
+        retval = ERROR_DECODE_NEXT_BLOCK_ID_DATA;
         goto cleanup_get_next_block_id_response;
     }
 

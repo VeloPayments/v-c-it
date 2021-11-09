@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <helpers/cert_helpers.h>
 #include <helpers/conn_helpers.h>
+#include <helpers/status_codes.h>
 #include <rcpr/resource.h>
 #include <rcpr/uuid.h>
 #include <vcblockchain/entity_cert.h>
@@ -60,7 +61,7 @@ int main(int argc, char* argv[])
     if (VCCRYPT_STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error initializing crypto suite.\n");
-        retval = 1;
+        retval = ERROR_CRYPTO_SUITE_INIT;
         goto cleanup_allocator;
     }
 
@@ -69,7 +70,7 @@ int main(int argc, char* argv[])
     if (VCTOOL_STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error creating file abstraction layer.\n");
-        retval = 2;
+        retval = ERROR_FILE_ABSTRACTION_INIT;
         goto cleanup_crypto_suite;
     }
 
@@ -84,7 +85,7 @@ int main(int argc, char* argv[])
     }
 
     /* success. */
-    retval = 0;
+    retval = STATUS_SUCCESS;
     goto cleanup_connection;
 
 cleanup_connection:

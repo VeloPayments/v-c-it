@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <helpers/cert_helpers.h>
 #include <helpers/conn_helpers.h>
+#include <helpers/status_codes.h>
 #include <rcpr/resource.h>
 #include <rcpr/uuid.h>
 #include <vcblockchain/entity_cert.h>
@@ -67,7 +68,7 @@ int main(int argc, char* argv[])
     if (VCCRYPT_STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error initializing crypto suite.\n");
-        retval = 1;
+        retval = ERROR_CRYPTO_SUITE_INIT;
         goto cleanup_allocator;
     }
 
@@ -76,7 +77,7 @@ int main(int argc, char* argv[])
     if (VCTOOL_STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error creating file abstraction layer.\n");
-        retval = 2;
+        retval = ERROR_FILE_ABSTRACTION_INIT;
         goto cleanup_crypto_suite;
     }
 
@@ -97,7 +98,7 @@ int main(int argc, char* argv[])
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error sending get latest block id request.\n");
-        retval = 200;
+        retval = ERROR_SEND_LATEST_BLOCK_ID_REQ;
         goto cleanup_connection;
     }
 
@@ -109,7 +110,7 @@ int main(int argc, char* argv[])
     {
         fprintf(
             stderr, "Error receiving response from agentd. (%x)\n", retval);
-        retval = 201;
+        retval = ERROR_RECV_LATEST_BLOCK_ID_RESP;
         goto cleanup_connection;
     }
 
@@ -121,7 +122,7 @@ int main(int argc, char* argv[])
     {
         fprintf(
             stderr, "Error decoding response from agentd. (%x)\n", retval);
-        retval = 202;
+        retval = ERROR_DECODE_LATEST_BLOCK_ID;
         goto cleanup_resp;
     }
 
@@ -129,7 +130,7 @@ int main(int argc, char* argv[])
     if (PROTOCOL_REQ_ID_LATEST_BLOCK_ID_GET != request_id)
     {
         fprintf(stderr, "Wrong response code. (%x)\n", request_id);
-        retval = 203;
+        retval = ERROR_LATEST_BLOCK_ID_REQUEST_ID;
         goto cleanup_resp;
     }
 
@@ -137,7 +138,7 @@ int main(int argc, char* argv[])
     if (STATUS_SUCCESS != status)
     {
         fprintf(stderr, "fail status from agentd. (%x)\n", status);
-        retval = 204;
+        retval = ERROR_LATEST_BLOCK_ID_STATUS;
         goto cleanup_resp;
     }
 
@@ -147,7 +148,7 @@ int main(int argc, char* argv[])
         fprintf(
             stderr, "mismatched offsets. (%x) vs (%x)", offset,
             EXPECTED_OFFSET);
-        retval = 205;
+        retval = ERROR_LATEST_BLOCK_ID_OFFSET;
         goto cleanup_resp;
     }
 
@@ -158,7 +159,7 @@ int main(int argc, char* argv[])
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "could not decode response. (%x)\n", status);
-        retval = 206;
+        retval = ERROR_DECODE_LATEST_BLOCK_ID_DATA;
         goto cleanup_resp;
     }
 
@@ -168,7 +169,7 @@ int main(int argc, char* argv[])
             16))
     {
         fprintf(stderr, "latest block id does not match root block.\n");
-        retval = 207;
+        retval = ERROR_LATEST_BLOCK_ID_MISMATCH;
         goto cleanup_decoded_resp;
     }
 

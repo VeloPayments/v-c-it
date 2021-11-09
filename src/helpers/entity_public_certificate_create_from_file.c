@@ -8,6 +8,7 @@
 
 #include <fcntl.h>
 #include <helpers/cert_helpers.h>
+#include <helpers/status_codes.h>
 #include <stdio.h>
 #include <vcblockchain/error_codes.h>
 
@@ -45,17 +46,17 @@ status entity_public_certificate_create_from_file(
     if (VCTOOL_STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Could not stat %s.\n", filename);
-        retval = 3;
+        retval = ERROR_PUBLIC_CERT_STAT;
         goto done;
     }
 
-    /* create the certificate buffer. */
+    /* create public key file buffer. */
     size_t file_size = fst.fst_size;
     retval = vccrypt_buffer_init(&buf, suite->alloc_opts, file_size);
     if (VCCRYPT_STATUS_SUCCESS != retval)
     {
-        fprintf(stderr, "Could not create certificate buffer.\n");
-        retval = 4;
+        fprintf(stderr, "Could not create public key file buffer.\n");
+        retval = ERROR_PUBLIC_CERT_BUFFER_CREATE;
         goto done;
     }
 
@@ -66,7 +67,7 @@ status entity_public_certificate_create_from_file(
     if (VCTOOL_STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Could not open %s for reading.\n", filename);
-        retval = 5;
+        retval = ERROR_PUBLIC_CERT_FILE_OPEN;
         goto cleanup_buf;
     }
 
@@ -76,7 +77,7 @@ status entity_public_certificate_create_from_file(
     if (VCTOOL_STATUS_SUCCESS != retval || read_bytes != buf.size)
     {
         fprintf(stderr, "Error reading from %s.\n", filename);
-        retval = 6;
+        retval = ERROR_PUBLIC_CERT_FILE_READ;
         goto cleanup_fd;
     }
 
@@ -86,7 +87,7 @@ status entity_public_certificate_create_from_file(
     if (VCBLOCKCHAIN_STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error decoding public certificate.\n");
-        retval = 7;
+        retval = ERROR_PUBLIC_CERT_FILE_PARSE;
         goto cleanup_fd;
     }
 

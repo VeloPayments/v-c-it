@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <helpers/cert_helpers.h>
 #include <helpers/conn_helpers.h>
+#include <helpers/status_codes.h>
 #include <vcblockchain/protocol.h>
 #include <vcblockchain/protocol/data.h>
 #include <vcblockchain/protocol/serialization.h>
@@ -76,7 +77,7 @@ int main(int argc, char* argv[])
     if (VCCRYPT_STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error initializing crypto suite.\n");
-        retval = 1;
+        retval = ERROR_CRYPTO_SUITE_INIT;
         goto cleanup_allocator;
     }
 
@@ -85,7 +86,7 @@ int main(int argc, char* argv[])
     if (VCCERT_STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error initializing certificate builder.\n");
-        retval = 230;
+        retval = ERROR_CERTIFICATE_BUILDER_INIT;
         goto cleanup_crypto_suite;
     }
 
@@ -98,7 +99,7 @@ int main(int argc, char* argv[])
     if (VCCERT_STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error creating file abstraction layer.\n");
-        retval = 239;
+        retval = ERROR_CERTIFICATE_PARSER_INIT;
         goto cleanup_builder_opts;
     }
 
@@ -107,7 +108,7 @@ int main(int argc, char* argv[])
     if (VCTOOL_STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error creating file abstraction layer.\n");
-        retval = 2;
+        retval = ERROR_FILE_ABSTRACTION_INIT;
         goto cleanup_parser_opts;
     }
 
@@ -147,7 +148,7 @@ int main(int argc, char* argv[])
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error creating transaction certificate.\n");
-        retval = 200;
+        retval = ERROR_TRANSACTION_CERT_CREATE;
         goto cleanup_connection;
     }
 
