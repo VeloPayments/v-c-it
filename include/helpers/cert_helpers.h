@@ -9,7 +9,9 @@
 #pragma once
 
 #include <rcpr/status.h>
+#include <rcpr/uuid.h>
 #include <vcblockchain/entity_cert.h>
+#include <vccert/builder.h>
 #include <vctool/file.h>
 
 /**
@@ -53,3 +55,30 @@ status entity_private_certificate_create_from_file(
 status entity_public_certificate_create_from_file(
     vcblockchain_entity_public_cert** cert, file* file,
     vccrypt_suite_options_t* suite, const char* filename);
+
+/**
+ * \brief Create a transaction certificate suitable for testing.
+ *
+ * \param cert_buffer       Pointer to an uninitialized certificate buffer that
+ *                          is initialized with the contents of this certificate
+ *                          on success.
+ * \param txn_uuid          Pointer to a uuid field that is populated with the
+ *                          transaction uuid on success.
+ * \param artifact_uuid     Pointer to a uuid field that is populated with the
+ *                          artifact uuid on success.
+ * \param builder_opts      Certificate builder options for this operation.
+ * \param client_id         ID of the client signing this certificate.
+ * \param client_privkey    Private signing key of the client.
+ *
+ * \note On success, the caller owns the cert_buffer and must dispose it when it
+ * is no longer needed.
+ *
+ * \returns a status code indicating success or failure.
+ *      - STATUS_SUCCESS on success.
+ *      - a non-zero error code on failure.
+ */
+status create_transaction_cert(
+    vccrypt_buffer_t* cert_buffer, RCPR_SYM(rcpr_uuid)* txn_uuid,
+    RCPR_SYM(rcpr_uuid)* artifact_uuid, vccert_builder_options_t* builder_opts,
+    const RCPR_SYM(rcpr_uuid)* signer_id,
+    const vccrypt_buffer_t* client_privkey);
