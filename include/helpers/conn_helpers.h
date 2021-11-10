@@ -13,6 +13,10 @@
 #include <vcblockchain/ssock.h>
 #include <vctool/file.h>
 
+#if defined(__cplusplus)
+extern "C" {
+#endif /* defined(__cplusplus) */
+
 /**
  * \brief Connect to agentd using the provided certificate files to establish
  * the connection.
@@ -123,3 +127,26 @@ status get_and_verify_block(
     uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
     const vpr_uuid* block_id, vccrypt_buffer_t* block_cert,
     vpr_uuid* prev_block_id, vpr_uuid* next_block_id);
+
+/**
+ * \brief Request the current last ID from the agentd instance.
+ *
+ * \param sock              The socket connection with agentd.
+ * \param suite             The crypto suite to use for this operation.
+ * \param client_iv         The client-side initialization vector counter.
+ * \param server_iv         The server-side initialization vector counter.
+ * \param shared_secret     The computed shared secret for this session.
+ * \param last_block_id     Variable to hold the last block id on success.
+ *
+ * \returns a status code indicating success or failure.
+ *      - STATUS_SUCCESS on success.
+ *      - a non-zero error code on failure.
+ */
+status get_and_verify_last_block_id(
+    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
+    uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
+    vpr_uuid* last_block_id);
+
+#if defined(__cplusplus)
+}
+#endif /* defined(__cplusplus) */

@@ -15,7 +15,9 @@
 #include <vccert/parser.h>
 #include <vctool/file.h>
 
-#if !defined(__cplusplus)
+#if defined(__cplusplus)
+extern "C" {
+#endif /* defined(__cplusplus) */
 
 /**
  * \brief Read a private key and create an entity private certificate instance.
@@ -103,4 +105,6 @@ status find_transaction_in_block(
     const vccrypt_buffer_t* block_cert, const vccrypt_buffer_t* txn_cert,
     vccert_parser_options_t* parser_options);
 
-#endif /*!defined(__cplusplus)*/
+#if defined(__cplusplus)
+}
+#endif /*defined(__cplusplus)*/
