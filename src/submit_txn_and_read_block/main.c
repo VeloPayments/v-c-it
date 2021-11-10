@@ -14,6 +14,7 @@
 #include <vcblockchain/protocol/data.h>
 #include <vcblockchain/protocol/serialization.h>
 #include <vccert/certificate_types.h>
+#include <vccrypt/compare.h>
 #include <vpr/allocator/malloc_allocator.h>
 #include <vpr/parameters.h>
 
@@ -33,6 +34,10 @@ static int dummy_contract_resolver(
 static bool dummy_key_resolver(
     void* options, void* parser, uint64_t height, const uint8_t* entity_id,
     vccrypt_buffer_t* pubenckey_buffer, vccrypt_buffer_t* pubsignkey_buffer);
+
+static vpr_uuid ff_uuid = { .data = {
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } };
 
 /**
  * \brief Main entry point for the submit transaction and read block test
@@ -63,7 +68,8 @@ int main(int argc, char* argv[])
     ssock sock;
     uint64_t client_iv, server_iv;
     vpr_uuid txn_uuid, artifact_uuid;
-    vpr_uuid next_block_id, prev_block_id;
+    vpr_uuid next_block_id, prev_block_id, latest_block_id;
+    vpr_uuid next_next_block_id;
 
     /* register the velo v1 suite. */
     vccrypt_suite_register_velo_v1();
@@ -181,10 +187,28 @@ int main(int argc, char* argv[])
     retval =
         get_and_verify_block(
             &sock, &suite, &client_iv, &server_iv, &shared_secret,
-            &next_block_id, &block_cert, &prev_block_id, &next_block_id);
+            &next_block_id, &block_cert, &prev_block_id, &next_next_block_id);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_transaction_cert;
+    }
+
+    /* the previous block id should be the root block id. */
+    if (crypto_memcmp(
+            &prev_block_id, &vccert_certificate_type_uuid_root_block, 16))
+    {
+        fprintf(stderr, "prev block id does not match root block id.\n");
+        retval = ERROR_PREV_ID_ROOT_ID_MISMATCH;
+        goto cleanup_block_cert;
+    }
+
+    /* the next next block id should be all 0xff. */
+    if (crypto_memcmp(
+            &next_next_block_id, &ff_uuid, 16))
+    {
+        fprintf(stderr, "next next block id should be invalid.\n");
+        retval = ERROR_NEXT_NEXT_BLOCK_ID_MISMATCH;
+        goto cleanup_block_cert;
     }
 
     /* find the transaction in the block. */
@@ -193,6 +217,30 @@ int main(int argc, char* argv[])
             &block_cert, &cert_buffer, &parser_options);
     if (STATUS_SUCCESS != retval)
     {
+        goto cleanup_block_cert;
+    }
+
+    /* get the latest block id. */
+    retval =
+        get_and_verify_last_block_id(
+            &sock, &suite, &client_iv, &server_iv, &shared_secret,
+            &latest_block_id);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_block_cert;
+    }
+
+    /* verify that this matches our next block id. */
+    if (crypto_memcmp(&next_block_id, &latest_block_id, 16))
+    {
+        fprintf(stderr, "next block id does not match latest block id.\n");
+        for (int i = 0; i < 16; ++i)
+            fprintf(stderr, "%02x", next_block_id.data[i]);
+        fprintf(stderr, "\n");
+        for (int i = 0; i < 16; ++i)
+            fprintf(stderr, "%02x", latest_block_id.data[i]);
+        fprintf(stderr, "\n");
+        retval = ERROR_NEXT_ID_LATEST_ID_MISMATCH;
         goto cleanup_block_cert;
     }
 
