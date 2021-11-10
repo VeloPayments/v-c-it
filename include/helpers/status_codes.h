@@ -55,6 +55,9 @@
 #define ERROR_LATEST_BLOCK_ID_OFFSET                     45
 #define ERROR_DECODE_LATEST_BLOCK_ID_DATA                46
 #define ERROR_LATEST_BLOCK_ID_MISMATCH                   47
+#define ERROR_NEXT_ID_LATEST_ID_MISMATCH                 48
+#define ERROR_PREV_ID_ROOT_ID_MISMATCH                   49
+#define ERROR_NEXT_NEXT_BLOCK_ID_MISMATCH                50
 
 #define ERROR_SEND_HANDSHAKE_REQ                        101
 #define ERROR_RECV_HANDSHAKE_RESP                       102
