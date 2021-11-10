@@ -51,10 +51,7 @@ int main(int argc, char* argv[])
     file file;
     ssock sock;
     uint64_t client_iv, server_iv;
-    const uint32_t EXPECTED_OFFSET = 0x1337;
-    vccrypt_buffer_t resp;
-    uint32_t request_id, offset, status;
-    protocol_resp_latest_block_id_get decoded_resp;
+    vpr_uuid latest_block_id;
 
     /* register the velo v1 suite. */
     vccrypt_suite_register_velo_v1();
@@ -91,97 +88,28 @@ int main(int argc, char* argv[])
         goto cleanup_file;
     }
 
-    /* send the get latest block query request. */
+    /* query for the latest block. */
     retval =
-        vcblockchain_protocol_sendreq_latest_block_id_get(
-            &sock, &suite, &client_iv, &shared_secret, EXPECTED_OFFSET);
+        get_and_verify_last_block_id(
+            &sock, &suite, &client_iv, &server_iv, &shared_secret,
+            &latest_block_id);
     if (STATUS_SUCCESS != retval)
     {
-        fprintf(stderr, "Error sending get latest block id request.\n");
-        retval = ERROR_SEND_LATEST_BLOCK_ID_REQ;
         goto cleanup_connection;
-    }
-
-    /* get a response. */
-    retval =
-        vcblockchain_protocol_recvresp(
-            &sock, &suite, &server_iv, &shared_secret, &resp);
-    if (STATUS_SUCCESS != retval)
-    {
-        fprintf(
-            stderr, "Error receiving response from agentd. (%x)\n", retval);
-        retval = ERROR_RECV_LATEST_BLOCK_ID_RESP;
-        goto cleanup_connection;
-    }
-
-    /* decode the response. */
-    retval =
-        vcblockchain_protocol_response_decode_header(
-            &request_id, &offset, &status, &resp);
-    if (STATUS_SUCCESS != retval)
-    {
-        fprintf(
-            stderr, "Error decoding response from agentd. (%x)\n", retval);
-        retval = ERROR_DECODE_LATEST_BLOCK_ID;
-        goto cleanup_resp;
-    }
-
-    /* verify the request ID. */
-    if (PROTOCOL_REQ_ID_LATEST_BLOCK_ID_GET != request_id)
-    {
-        fprintf(stderr, "Wrong response code. (%x)\n", request_id);
-        retval = ERROR_LATEST_BLOCK_ID_REQUEST_ID;
-        goto cleanup_resp;
-    }
-
-    /* verify status. */
-    if (STATUS_SUCCESS != status)
-    {
-        fprintf(stderr, "fail status from agentd. (%x)\n", status);
-        retval = ERROR_LATEST_BLOCK_ID_STATUS;
-        goto cleanup_resp;
-    }
-
-    /* verify offset. */
-    if (EXPECTED_OFFSET != offset)
-    {
-        fprintf(
-            stderr, "mismatched offsets. (%x) vs (%x)", offset,
-            EXPECTED_OFFSET);
-        retval = ERROR_LATEST_BLOCK_ID_OFFSET;
-        goto cleanup_resp;
-    }
-
-    /* decode the response. */
-    retval =
-        vcblockchain_protocol_decode_resp_latest_block_id_get(
-            &decoded_resp, resp.data, resp.size);
-    if (STATUS_SUCCESS != retval)
-    {
-        fprintf(stderr, "could not decode response. (%x)\n", status);
-        retval = ERROR_DECODE_LATEST_BLOCK_ID_DATA;
-        goto cleanup_resp;
     }
 
     /* verify that the block id is the root block. */
     if (crypto_memcmp(
-            &decoded_resp.block_id, vccert_certificate_type_uuid_root_block,
-            16))
+            &latest_block_id, vccert_certificate_type_uuid_root_block, 16))
     {
         fprintf(stderr, "latest block id does not match root block.\n");
         retval = ERROR_LATEST_BLOCK_ID_MISMATCH;
-        goto cleanup_decoded_resp;
+        goto cleanup_connection;
     }
 
     /* success. */
     retval = 0;
-    goto cleanup_decoded_resp;
-
-cleanup_decoded_resp:
-    dispose((disposable_t*)&decoded_resp);
-
-cleanup_resp:
-    dispose((disposable_t*)&resp);
+    goto cleanup_connection;
 
 cleanup_connection:
     release_retval =
