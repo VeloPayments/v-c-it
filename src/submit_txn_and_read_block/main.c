@@ -254,12 +254,6 @@ int main(int argc, char* argv[])
             &prev_block_id2, vccert_certificate_type_uuid_root_block, 16))
     {
         fprintf(stderr, "next block id does not match latest block id.\n");
-        for (int i = 0; i < 16; ++i)
-            fprintf(stderr, "%02x", prev_block_id2.data[i]);
-        fprintf(stderr, "\n");
-        for (int i = 0; i < 16; ++i)
-            fprintf(stderr, "%02x", vccert_certificate_type_uuid_root_block[i]);
-        fprintf(stderr, "\n");
         retval = ERROR_PREV_ID_ROOT_ID_MISMATCH2;
         goto cleanup_block_cert;
 
