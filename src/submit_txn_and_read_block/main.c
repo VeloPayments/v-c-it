@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
     ssock sock;
     uint64_t client_iv, server_iv;
     vpr_uuid txn_uuid, artifact_uuid;
-    vpr_uuid next_block_id, prev_block_id, latest_block_id;
+    vpr_uuid next_block_id, prev_block_id, prev_block_id2, latest_block_id;
     vpr_uuid next_next_block_id;
 
     /* register the velo v1 suite. */
@@ -234,17 +234,39 @@ int main(int argc, char* argv[])
     if (crypto_memcmp(&next_block_id, &latest_block_id, 16))
     {
         fprintf(stderr, "next block id does not match latest block id.\n");
-        for (int i = 0; i < 16; ++i)
-            fprintf(stderr, "%02x", next_block_id.data[i]);
-        fprintf(stderr, "\n");
-        for (int i = 0; i < 16; ++i)
-            fprintf(stderr, "%02x", latest_block_id.data[i]);
-        fprintf(stderr, "\n");
         retval = ERROR_NEXT_ID_LATEST_ID_MISMATCH;
         goto cleanup_block_cert;
     }
 
-    /* TODO - get and verify artifact by id. */
+    /* get the next block's previous block id. */
+    retval =
+        get_and_verify_prev_block_id(
+            &sock, &suite, &client_iv, &server_iv, &shared_secret,
+            &next_block_id, &prev_block_id2);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_block_cert;
+    }
+
+    /* verify that the next block's previous block id matches the root block. */
+    if (
+        crypto_memcmp(
+            &prev_block_id2, vccert_certificate_type_uuid_root_block, 16))
+    {
+        fprintf(stderr, "next block id does not match latest block id.\n");
+        for (int i = 0; i < 16; ++i)
+            fprintf(stderr, "%02x", prev_block_id2.data[i]);
+        fprintf(stderr, "\n");
+        for (int i = 0; i < 16; ++i)
+            fprintf(stderr, "%02x", vccert_certificate_type_uuid_root_block[i]);
+        fprintf(stderr, "\n");
+        retval = ERROR_PREV_ID_ROOT_ID_MISMATCH2;
+        goto cleanup_block_cert;
+
+    }
+
+    /* TODO - get and verify artifact get first txn id by artifact id. */
+    /* TODO - get and verify artifact get last txn id by artifact id. */
     /* TODO - get and verify transaction by id. */
 
     /* TODO - here. */

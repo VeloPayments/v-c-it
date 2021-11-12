@@ -57,7 +57,16 @@
 #define ERROR_LATEST_BLOCK_ID_MISMATCH                   47
 #define ERROR_NEXT_ID_LATEST_ID_MISMATCH                 48
 #define ERROR_PREV_ID_ROOT_ID_MISMATCH                   49
-#define ERROR_NEXT_NEXT_BLOCK_ID_MISMATCH                50
+#define ERROR_PREV_ID_ROOT_ID_MISMATCH2                  50
+#define ERROR_NEXT_NEXT_BLOCK_ID_MISMATCH                51
+#define ERROR_SEND_PREV_BLOCK_ID_REQ                     52
+#define ERROR_RECV_PREV_BLOCK_ID_RESP                    53
+#define ERROR_DECODE_PREV_BLOCK_ID                       54
+#define ERROR_PREV_BLOCK_ID_REQUEST_ID                   55
+#define ERROR_PREV_BLOCK_ID_STATUS                       56
+#define ERROR_PREV_BLOCK_ID_OFFSET                       57
+#define ERROR_DECODE_PREV_BLOCK_ID_DATA                  58
+
 
 #define ERROR_SEND_HANDSHAKE_REQ                        101
 #define ERROR_RECV_HANDSHAKE_RESP                       102
