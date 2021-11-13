@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
     file file;
     ssock sock;
     uint64_t client_iv, server_iv;
-    vpr_uuid txn_uuid, artifact_uuid;
+    vpr_uuid txn_uuid, artifact_uuid, first_txn_uuid;
     vpr_uuid next_block_id, prev_block_id, prev_block_id2, latest_block_id;
     vpr_uuid next_next_block_id;
 
@@ -259,11 +259,29 @@ int main(int argc, char* argv[])
 
     }
 
-    /* TODO - get and verify artifact get first txn id by artifact id. */
+    /* get and verify artifact get first txn id by artifact id. */
+    retval =
+        get_and_verify_artifact_first_txn_id(
+            &sock, &suite, &client_iv, &server_iv, &shared_secret,
+            &artifact_uuid, &first_txn_uuid);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_block_cert;
+    }
+
+    /* verify that the first transaction id matches our transaction id. */
+    if (
+        crypto_memcmp(
+            &txn_uuid, &first_txn_uuid, 16))
+    {
+        fprintf(stderr, "first txn id does not match txn id.\n");
+        retval = ERROR_TXN_ID_FIRST_ID_MISMATCH;
+    }
+
     /* TODO - get and verify artifact get last txn id by artifact id. */
     /* TODO - get and verify transaction by id. */
 
-    /* TODO - here. */
+    /* success. */
     retval = STATUS_SUCCESS;
     goto cleanup_block_cert;
 
