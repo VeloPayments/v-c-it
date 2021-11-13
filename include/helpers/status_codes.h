@@ -66,7 +66,14 @@
 #define ERROR_PREV_BLOCK_ID_STATUS                       56
 #define ERROR_PREV_BLOCK_ID_OFFSET                       57
 #define ERROR_DECODE_PREV_BLOCK_ID_DATA                  58
-
+#define ERROR_TXN_ID_FIRST_ID_MISMATCH                   59
+#define ERROR_SEND_FIRST_TXN_ID_REQ                      60
+#define ERROR_RECV_FIRST_TXN_ID_RESP                     61
+#define ERROR_DECODE_FIRST_TXN_ID                        62
+#define ERROR_FIRST_TXN_ID_REQUEST_ID                    63
+#define ERROR_FIRST_TXN_ID_STATUS                        64
+#define ERROR_FIRST_TXN_ID_OFFSET                        65
+#define ERROR_DECODE_FIRST_TXN_ID_DATA                   66
 
 #define ERROR_SEND_HANDSHAKE_REQ                        101
 #define ERROR_RECV_HANDSHAKE_RESP                       102
