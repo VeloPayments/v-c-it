@@ -74,6 +74,14 @@
 #define ERROR_FIRST_TXN_ID_STATUS                        64
 #define ERROR_FIRST_TXN_ID_OFFSET                        65
 #define ERROR_DECODE_FIRST_TXN_ID_DATA                   66
+#define ERROR_TXN_ID_LAST_ID_MISMATCH                    67
+#define ERROR_SEND_LAST_TXN_ID_REQ                       68
+#define ERROR_RECV_LAST_TXN_ID_RESP                      69
+#define ERROR_DECODE_LAST_TXN_ID                         70
+#define ERROR_LAST_TXN_ID_REQUEST_ID                     71
+#define ERROR_LAST_TXN_ID_STATUS                         72
+#define ERROR_LAST_TXN_ID_OFFSET                         73
+#define ERROR_DECODE_LAST_TXN_ID_DATA                    74
 
 #define ERROR_SEND_HANDSHAKE_REQ                        101
 #define ERROR_RECV_HANDSHAKE_RESP                       102
