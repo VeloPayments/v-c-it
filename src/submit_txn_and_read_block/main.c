@@ -39,6 +39,10 @@ static vpr_uuid ff_uuid = { .data = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } };
 
+static vpr_uuid zero_uuid = { .data = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } };
+
 /**
  * \brief Main entry point for the submit transaction and read block test
  * utility.
@@ -61,6 +65,7 @@ int main(int argc, char* argv[])
     vccrypt_buffer_t shared_secret;
     vccrypt_buffer_t cert_buffer;
     vccrypt_buffer_t block_cert;
+    vccrypt_buffer_t txn_cert;
     vcblockchain_entity_private_cert* client_priv;
     const vccrypt_buffer_t* client_sign_priv;
     const rcpr_uuid* client_id;
@@ -69,7 +74,8 @@ int main(int argc, char* argv[])
     uint64_t client_iv, server_iv;
     vpr_uuid txn_uuid, artifact_uuid, first_txn_uuid, last_txn_uuid;
     vpr_uuid next_block_id, prev_block_id, prev_block_id2, latest_block_id;
-    vpr_uuid next_next_block_id;
+    vpr_uuid next_next_block_id, prev_txn_uuid, next_txn_uuid;
+    vpr_uuid txn_artifact_uuid, txn_block_uuid;
 
     /* register the velo v1 suite. */
     vccrypt_suite_register_velo_v1();
@@ -276,6 +282,7 @@ int main(int argc, char* argv[])
     {
         fprintf(stderr, "first txn id does not match txn id.\n");
         retval = ERROR_TXN_ID_FIRST_ID_MISMATCH;
+        goto cleanup_block_cert;
     }
 
     /* get and verify artifact get last txn id by artifact id. */
@@ -295,13 +302,66 @@ int main(int argc, char* argv[])
     {
         fprintf(stderr, "last txn id does not match txn id.\n");
         retval = ERROR_TXN_ID_LAST_ID_MISMATCH;
+        goto cleanup_block_cert;
     }
 
-    /* TODO - get and verify transaction by id. */
+    /* get and verify transaction by id. */
+    retval =
+        get_and_verify_txn(
+            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn_uuid,
+            &txn_cert, &prev_txn_uuid, &next_txn_uuid, &txn_artifact_uuid,
+            &txn_block_uuid);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_block_cert;
+    }
+
+    /* verify that the previous txn uuid is our zero id. */
+    if (
+        crypto_memcmp(
+            &prev_txn_uuid, &zero_uuid, 16))
+    {
+        fprintf(stderr, "prev txn id is not zero.\n");
+        retval = ERROR_TXN_PREV_ID_ZERO_ID_MISMATCH;
+        goto cleanup_txn_cert;
+    }
+
+    /* verify that the next txn uuid is our ff id. */
+    if (
+        crypto_memcmp(
+            &next_txn_uuid, &ff_uuid, 16))
+    {
+        fprintf(stderr, "next txn id is not 0xff.\n");
+        retval = ERROR_TXN_NEXT_ID_FF_ID_MISMATCH;
+        goto cleanup_txn_cert;
+    }
+
+    /* verify that the artifact id matches. */
+    if (
+        crypto_memcmp(
+            &txn_artifact_uuid, &artifact_uuid, 16))
+    {
+        fprintf(stderr, "transaction artifact id does not match.\n");
+        retval = ERROR_TXN_ARTIFACT_ID_MISMATCH;
+        goto cleanup_txn_cert;
+    }
+
+    /* verify that the block id matches. */
+    if (
+        crypto_memcmp(
+            &txn_block_uuid, &latest_block_id, 16))
+    {
+        fprintf(stderr, "transaction block id does not match.\n");
+        retval = ERROR_TXN_BLOCK_ID_MISMATCH;
+        goto cleanup_txn_cert;
+    }
 
     /* success. */
     retval = STATUS_SUCCESS;
-    goto cleanup_block_cert;
+    goto cleanup_txn_cert;
+
+cleanup_txn_cert:
+    dispose((disposable_t*)&txn_cert);
 
 cleanup_block_cert:
     dispose((disposable_t*)&block_cert);

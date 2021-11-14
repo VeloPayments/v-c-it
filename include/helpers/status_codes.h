@@ -82,6 +82,14 @@
 #define ERROR_LAST_TXN_ID_STATUS                         72
 #define ERROR_LAST_TXN_ID_OFFSET                         73
 #define ERROR_DECODE_LAST_TXN_ID_DATA                    74
+#define ERROR_TXN_PREV_ID_ZERO_ID_MISMATCH               75
+#define ERROR_TXN_NEXT_ID_FF_ID_MISMATCH                 76
+#define ERROR_TXN_ARTIFACT_ID_MISMATCH                   77
+#define ERROR_TXN_BLOCK_ID_MISMATCH                      78
+#define ERROR_GET_TXN_REQUEST_ID                         79
+#define ERROR_GET_TXN_STATUS                             80
+#define ERROR_GET_TXN_OFFSET                             81
+#define ERROR_DECODE_TXN_RESP_DATA                       82
 
 #define ERROR_SEND_HANDSHAKE_REQ                        101
 #define ERROR_RECV_HANDSHAKE_RESP                       102
