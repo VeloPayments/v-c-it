@@ -76,6 +76,7 @@ int main(int argc, char* argv[])
     vpr_uuid next_block_id, prev_block_id, prev_block_id2, latest_block_id;
     vpr_uuid next_next_block_id, prev_txn_uuid, next_txn_uuid;
     vpr_uuid txn_artifact_uuid, txn_block_uuid;
+    vpr_uuid block_height_1_block_uuid;
 
     /* register the velo v1 suite. */
     vccrypt_suite_register_velo_v1();
@@ -356,6 +357,23 @@ int main(int argc, char* argv[])
         goto cleanup_txn_cert;
     }
 
+    /* get and verify the first block id by height. */
+    retval =
+        get_and_verify_block_id_by_height(
+            &sock, &suite, &client_iv, &server_iv, &shared_secret, 1,
+            &block_height_1_block_uuid);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_txn_cert;
+    }
+
+    /* verify that this is our block id. */
+    if (crypto_memcmp(&block_height_1_block_uuid, &latest_block_id, 16))
+    {
+        fprintf(stderr, "block id 1 does not match.\n");
+        retval = ERROR_BLOCK_ID_1_MISMATCH;
+    } 
+    
     /* success. */
     retval = STATUS_SUCCESS;
     goto cleanup_txn_cert;
