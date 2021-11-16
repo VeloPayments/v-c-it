@@ -90,6 +90,14 @@
 #define ERROR_GET_TXN_STATUS                             80
 #define ERROR_GET_TXN_OFFSET                             81
 #define ERROR_DECODE_TXN_RESP_DATA                       82
+#define ERROR_BLOCK_ID_1_MISMATCH                        83
+#define ERROR_SEND_BLOCK_ID_BY_HEIGHT_REQ                84
+#define ERROR_RECV_BLOCK_ID_BY_HEIGHT_RESP               85
+#define ERROR_DECODE_BLOCK_ID_BY_HEIGHT                  86
+#define ERROR_BLOCK_ID_BY_HEIGHT_REQUEST_ID              87
+#define ERROR_BLOCK_ID_BY_HEIGHT_STATUS                  88
+#define ERROR_BLOCK_ID_BY_HEIGHT_OFFSET                  89
+#define ERROR_DECODE_BLOCK_ID_BY_HEIGHT_DATA             90
 
 #define ERROR_SEND_HANDSHAKE_REQ                        101
 #define ERROR_RECV_HANDSHAKE_RESP                       102
