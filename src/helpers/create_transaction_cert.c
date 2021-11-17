@@ -21,17 +21,13 @@ static const rcpr_uuid TEST_ARTIFACT_TYPE = { .data = {
     0x67, 0x7f, 0x58, 0xf7, 0xb0, 0xa8, 0x45, 0x07,
     0x9e, 0xff, 0x6b, 0x18, 0x1d, 0xb7, 0x06, 0xb7 } };
 
-static const rcpr_uuid TEST_CERT_ID = { .data = {
-    0x7a, 0x9d, 0x22, 0xe3, 0x99, 0x70, 0x4e, 0x35,
-    0xa4, 0x62, 0x85, 0x2e, 0xa1, 0x40, 0xcd, 0x47 } };
-
-static const rcpr_uuid TEST_ARTIFACT_ID = { .data = {
-    0x7e, 0x5b, 0x76, 0xc4, 0x18, 0x33, 0x4d, 0x74,
-    0xa5, 0xb8, 0x0d, 0x6f, 0x8f, 0x82, 0xa8, 0x5d } };
-
 static const rcpr_uuid ZERO_UUID = { .data = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } };
+
+static status create_random_uuids(
+    vccrypt_suite_options_t* suite, rcpr_uuid* txn_uuid,
+    rcpr_uuid* artifact_uuid);
 
 /**
  * \brief Create a transaction certificate suitable for testing.
@@ -67,6 +63,15 @@ status create_transaction_cert(
     MODEL_ASSERT(NULL != txn_uuid);
     MODEL_ASSERT(NULL != artifact_uuid);
     MODEL_ASSERT(prop_valid_builder_options(builder_opts));
+
+    /* create random UUIDs for the transaction and artifact ids. */
+    retval =
+        create_random_uuids(
+            builder_opts->crypto_suite, txn_uuid, artifact_uuid);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto done;
+    }
 
     /* create a certificate builder instance. */
     retval = vccert_builder_init(
@@ -116,7 +121,7 @@ status create_transaction_cert(
     /* add transaction id (certificate id). */
     retval =
         vccert_builder_add_short_UUID(
-            &builder, VCCERT_FIELD_TYPE_CERTIFICATE_ID, TEST_CERT_ID.data);
+            &builder, VCCERT_FIELD_TYPE_CERTIFICATE_ID, txn_uuid->data);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_builder;
@@ -125,7 +130,7 @@ status create_transaction_cert(
     /* add artifact id. */
     retval =
         vccert_builder_add_short_UUID(
-            &builder, VCCERT_FIELD_TYPE_ARTIFACT_ID, TEST_ARTIFACT_ID.data);
+            &builder, VCCERT_FIELD_TYPE_ARTIFACT_ID, artifact_uuid->data);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_builder;
@@ -201,13 +206,66 @@ status create_transaction_cert(
     }
 
     /* success. */
-    memcpy(txn_uuid, &TEST_CERT_ID, sizeof(TEST_CERT_ID));
-    memcpy(artifact_uuid, &TEST_ARTIFACT_ID, sizeof(TEST_ARTIFACT_ID));
     retval = STATUS_SUCCESS;
     goto cleanup_builder;
 
 cleanup_builder:
     dispose((disposable_t*)&builder);
+
+done:
+    return retval;
+}
+
+/**
+ * \brief Create random UUIDs for the certificate.
+ *
+ * \param suite         The crypto suite to use for this operation.
+ * \param txn_uuid      Pointer to UUID field to receive the transaction UUID.
+ * \param artifact_uuid Pointer to UUID field to receive the artifact UUID.
+ *
+ * \returns a status code indicating success or failure.
+ *      - STATUS_SUCCESS on success.
+ *      - a non-zero error code on failure.
+ */
+static status create_random_uuids(
+    vccrypt_suite_options_t* suite, rcpr_uuid* txn_uuid,
+    rcpr_uuid* artifact_uuid)
+{
+    status retval;
+    vccrypt_prng_context_t prng;
+
+    /* parameter sanity checks. */
+    MODEL_ASSERT(prop_vccrypt_suite_valid(suite));
+    MODEL_ASSERT(NULL != txn_uuid);
+    MODEL_ASSERT(NULL != artifact_uuid);
+
+    /* create a prng instance. */
+    retval = vccrypt_suite_prng_init(suite, &prng);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto done;
+    }
+
+    /* create a random transaction uuid. */
+    retval = vccrypt_prng_read_c(&prng, txn_uuid->data, 16);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_prng;
+    }
+
+    /* create a random artifact uuid. */
+    retval = vccrypt_prng_read_c(&prng, artifact_uuid->data, 16);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_prng;
+    }
+
+    /* success. */
+    retval = STATUS_SUCCESS;
+    goto cleanup_prng;
+
+cleanup_prng:
+    dispose((disposable_t*)&prng);
 
 done:
     return retval;
