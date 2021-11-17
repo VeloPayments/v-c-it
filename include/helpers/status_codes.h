@@ -99,6 +99,13 @@
 #define ERROR_BLOCK_ID_BY_HEIGHT_OFFSET                  89
 #define ERROR_DECODE_BLOCK_ID_BY_HEIGHT_DATA             90
 #define ERROR_BLOCK_ID_0_MISMATCH                        91
+#define ERROR_SEND_NEXT_TXN_ID_REQ                       92
+#define ERROR_RECV_NEXT_TXN_ID_RESP                      93
+#define ERROR_DECODE_NEXT_TXN_ID                         94
+#define ERROR_NEXT_TXN_ID_REQUEST_ID                     95
+#define ERROR_NEXT_TXN_ID_STATUS                         96
+#define ERROR_NEXT_TXN_ID_OFFSET                         97
+#define ERROR_DECODE_NEXT_TXN_ID_DATA                    98
 
 #define ERROR_SEND_HANDSHAKE_REQ                        101
 #define ERROR_RECV_HANDSHAKE_RESP                       102
@@ -109,3 +116,16 @@
 #define ERROR_DECODE_HANDSHAKE_ACK                      107
 #define ERROR_HANDSHAKE_ACK_REQUEST_ID                  108
 #define ERROR_HANDSHAKE_ACK_STATUS                      109
+
+/* status codes specific to submit_multiple_txns test. */
+#define ERROR_TXN1_PREV_ID_MISMATCH                     200
+#define ERROR_TXN1_NEXT_ID_MISMATCH                     201
+#define ERROR_TXN1_ARTIFACT_ID_MISMATCH                 202
+#define ERROR_TXN2_PREV_ID_MISMATCH                     203
+#define ERROR_TXN2_NEXT_ID_MISMATCH                     204
+#define ERROR_TXN2_ARTIFACT_ID_MISMATCH                 205
+#define ERROR_TXN3_PREV_ID_MISMATCH                     206
+#define ERROR_TXN3_NEXT_ID_MISMATCH                     207
+#define ERROR_TXN3_ARTIFACT_ID_MISMATCH                 208
+#define ERROR_TXN1_NEXT_ID_MISMATCH2                    209
+#define ERROR_TXN2_NEXT_ID_MISMATCH2                    210

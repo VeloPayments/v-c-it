@@ -373,7 +373,7 @@ int main(int argc, char* argv[])
         fprintf(stderr, "block id 1 does not match.\n");
         retval = ERROR_BLOCK_ID_1_MISMATCH;
     } 
-    
+
     /* success. */
     retval = STATUS_SUCCESS;
     goto cleanup_txn_cert;
