@@ -89,6 +89,37 @@ status create_transaction_cert(
     const vccrypt_buffer_t* client_privkey);
 
 /**
+ * \brief Create the next transaction cert for an artifact.
+ *
+ * \param cert_buffer       Pointer to an uninitialized certificate buffer that
+ *                          is initialized with the contents of this certificate
+ *                          on success.
+ * \param txn_uuid          Pointer to a uuid field that is populated with the
+ *                          transaction uuid on success.
+ * \param prev_txn_uuid     The previous transaction uuid.
+ * \param artifact_uuid     The artifact uuid.
+ * \param old_state         The old state.
+ * \param new_state         The new state.
+ * \param builder_opts      Certificate builder options for this operation.
+ * \param client_id         ID of the client signing this certificate.
+ * \param client_privkey    Private signing key of the client.
+ *
+ * \note On success, the caller owns the cert_buffer and must dispose it when it
+ * is no longer needed.
+ *
+ * \returns a status code indicating success or failure.
+ *      - STATUS_SUCCESS on success.
+ *      - a non-zero error code on failure.
+ */
+status create_next_transaction_cert(
+    vccrypt_buffer_t* cert_buffer, RCPR_SYM(rcpr_uuid)* txn_uuid,
+    const RCPR_SYM(rcpr_uuid)* prev_txn_uuid,
+    const RCPR_SYM(rcpr_uuid)* artifact_uuid, uint32_t old_state,
+    uint32_t new_state, vccert_builder_options_t* builder_opts,
+    const RCPR_SYM(rcpr_uuid)* signer_id,
+    const vccrypt_buffer_t* client_privkey);
+
+/**
  * \brief Attempt to find a transaction in a block, using the raw transaction
  * certificate.
  *
