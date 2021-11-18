@@ -363,6 +363,42 @@ int main(int argc, char* argv[])
         goto cleanup_txn3_agentd_cert;
     }
 
+    /* get and verify txn3 prev id. */
+    retval =
+        get_and_verify_prev_txn_id(
+            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn3_id,
+            &prev_txn3_id);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_txn3_agentd_cert;
+    }
+
+    /* verify that prev is txn2 uuid. */
+    if (crypto_memcmp(&prev_txn3_id, &txn2_id, 16))
+    {
+        fprintf(stderr, "Prev TXN3 mismatch.\n");
+        retval = ERROR_TXN3_PREV_ID_MISMATCH2;
+        goto cleanup_txn3_agentd_cert;
+    }
+
+    /* get and verify txn2 prev id. */
+    retval =
+        get_and_verify_prev_txn_id(
+            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn2_id,
+            &prev_txn2_id);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_txn3_agentd_cert;
+    }
+
+    /* verify that prev is txn1 uuid. */
+    if (crypto_memcmp(&prev_txn2_id, &txn1_id, 16))
+    {
+        fprintf(stderr, "Prev TXN2 mismatch.\n");
+        retval = ERROR_TXN2_PREV_ID_MISMATCH2;
+        goto cleanup_txn3_agentd_cert;
+    }
+
     /* success. */
     retval = STATUS_SUCCESS;
     goto cleanup_txn3_agentd_cert;

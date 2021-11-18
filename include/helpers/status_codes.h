@@ -106,7 +106,7 @@
 #define ERROR_NEXT_TXN_ID_STATUS                         96
 #define ERROR_NEXT_TXN_ID_OFFSET                         97
 #define ERROR_DECODE_NEXT_TXN_ID_DATA                    98
-
+#define ERROR_SEND_PREV_TXN_ID_REQ                       99
 #define ERROR_SEND_HANDSHAKE_REQ                        101
 #define ERROR_RECV_HANDSHAKE_RESP                       102
 #define ERROR_SERVER_ID_MISMATCH                        103
@@ -116,6 +116,12 @@
 #define ERROR_DECODE_HANDSHAKE_ACK                      107
 #define ERROR_HANDSHAKE_ACK_REQUEST_ID                  108
 #define ERROR_HANDSHAKE_ACK_STATUS                      109
+#define ERROR_RECV_PREV_TXN_ID_RESP                     100
+#define ERROR_DECODE_PREV_TXN_ID                        110
+#define ERROR_PREV_TXN_ID_REQUEST_ID                    111
+#define ERROR_PREV_TXN_ID_STATUS                        112
+#define ERROR_PREV_TXN_ID_OFFSET                        113
+#define ERROR_DECODE_PREV_TXN_ID_DATA                   114
 
 /* status codes specific to submit_multiple_txns test. */
 #define ERROR_TXN1_PREV_ID_MISMATCH                     200
@@ -129,3 +135,5 @@
 #define ERROR_TXN3_ARTIFACT_ID_MISMATCH                 208
 #define ERROR_TXN1_NEXT_ID_MISMATCH2                    209
 #define ERROR_TXN2_NEXT_ID_MISMATCH2                    210
+#define ERROR_TXN3_PREV_ID_MISMATCH2                    211
+#define ERROR_TXN2_PREV_ID_MISMATCH2                    212
