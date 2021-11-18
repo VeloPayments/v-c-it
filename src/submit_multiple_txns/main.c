@@ -74,6 +74,7 @@ int main(int argc, char* argv[])
     vpr_uuid prev_txn1_id, next_txn1_id, txn1_artifact_id, txn1_block_id;
     vpr_uuid prev_txn2_id, next_txn2_id, txn2_artifact_id, txn2_block_id;
     vpr_uuid prev_txn3_id, next_txn3_id, txn3_artifact_id, txn3_block_id;
+    vpr_uuid txn1_block_id2, txn2_block_id2, txn3_block_id2;
 
     /* register the velo v1 suite. */
     vccrypt_suite_register_velo_v1();
@@ -396,6 +397,60 @@ int main(int argc, char* argv[])
     {
         fprintf(stderr, "Prev TXN2 mismatch.\n");
         retval = ERROR_TXN2_PREV_ID_MISMATCH2;
+        goto cleanup_txn3_agentd_cert;
+    }
+
+    /* get the block id for txn1. */
+    retval =
+        get_and_verify_txn_block_id(
+            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn1_id,
+            &txn1_block_id2);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_txn3_agentd_cert;
+    }
+
+    /* get the block id for txn2. */
+    retval =
+        get_and_verify_txn_block_id(
+            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn2_id,
+            &txn2_block_id2);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_txn3_agentd_cert;
+    }
+
+    /* get the block id for txn3. */
+    retval =
+        get_and_verify_txn_block_id(
+            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn3_id,
+            &txn3_block_id2);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_txn3_agentd_cert;
+    }
+
+    /* verify that txn1_block_id matches. */
+    if (crypto_memcmp(&txn1_block_id, &txn1_block_id2, 16))
+    {
+        fprintf(stderr, "TXN1 block_id mismatch.\n");
+        retval = ERROR_TXN1_BLOCK_ID_MISMATCH;
+        goto cleanup_txn3_agentd_cert;
+    }
+
+    /* verify that txn2_block_id matches. */
+    if (crypto_memcmp(&txn2_block_id, &txn2_block_id2, 16))
+    {
+        fprintf(stderr, "TXN2 block_id mismatch.\n");
+        retval = ERROR_TXN2_BLOCK_ID_MISMATCH;
+        goto cleanup_txn3_agentd_cert;
+    }
+
+    /* verify that txn3_block_id matches. */
+    if (crypto_memcmp(&txn3_block_id, &txn3_block_id2, 16))
+    {
+        fprintf(stderr, "TXN3 block_id mismatch.\n");
+        retval = ERROR_TXN3_BLOCK_ID_MISMATCH;
         goto cleanup_txn3_agentd_cert;
     }
 
