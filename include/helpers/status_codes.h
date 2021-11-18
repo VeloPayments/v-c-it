@@ -122,6 +122,13 @@
 #define ERROR_PREV_TXN_ID_STATUS                        112
 #define ERROR_PREV_TXN_ID_OFFSET                        113
 #define ERROR_DECODE_PREV_TXN_ID_DATA                   114
+#define ERROR_SEND_TXN_BLOCK_ID_REQ                     115
+#define ERROR_RECV_TXN_BLOCK_ID_RESP                    116
+#define ERROR_DECODE_TXN_BLOCK_ID                       117
+#define ERROR_TXN_BLOCK_ID_REQUEST_ID                   118
+#define ERROR_TXN_BLOCK_ID_STATUS                       119
+#define ERROR_TXN_BLOCK_ID_OFFSET                       120
+#define ERROR_DECODE_TXN_BLOCK_ID_DATA                  121
 
 /* status codes specific to submit_multiple_txns test. */
 #define ERROR_TXN1_PREV_ID_MISMATCH                     200
@@ -137,3 +144,6 @@
 #define ERROR_TXN2_NEXT_ID_MISMATCH2                    210
 #define ERROR_TXN3_PREV_ID_MISMATCH2                    211
 #define ERROR_TXN2_PREV_ID_MISMATCH2                    212
+#define ERROR_TXN1_BLOCK_ID_MISMATCH                    213
+#define ERROR_TXN2_BLOCK_ID_MISMATCH                    214
+#define ERROR_TXN3_BLOCK_ID_MISMATCH                    215
