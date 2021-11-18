@@ -282,6 +282,27 @@ status get_and_verify_next_txn_id(
     uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
     const vpr_uuid* txn_id, vpr_uuid* next_txn_id);
 
+/**
+ * \brief Request the prev transaction ID for a given transaction ID from the
+ * agentd instance.
+ *
+ * \param sock              The socket connection with agentd.
+ * \param suite             The crypto suite to use for this operation.
+ * \param client_iv         The client-side initialization vector counter.
+ * \param server_iv         The server-side initialization vector counter.
+ * \param shared_secret     The computed shared secret for this session.
+ * \param txn_id            The txn id to query.
+ * \param prev_txn_id       Variable to hold the prev txn id on success.
+ *
+ * \returns a status code indicating success or failure.
+ *      - STATUS_SUCCESS on success.
+ *      - a non-zero error code on failure.
+ */
+status get_and_verify_prev_txn_id(
+    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
+    uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
+    const vpr_uuid* txn_id, vpr_uuid* prev_txn_id);
+
 #if defined(__cplusplus)
 }
 #endif /* defined(__cplusplus) */
