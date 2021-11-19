@@ -324,6 +324,23 @@ status get_and_verify_txn_block_id(
     uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
     const vpr_uuid* txn_id, vpr_uuid* block_id);
 
+/**
+ * \brief Get and verify the connection status.
+ *
+ * \param sock              The socket connection with agentd.
+ * \param suite             The crypto suite to use for this operation.
+ * \param client_iv         The client-side initialization vector counter.
+ * \param server_iv         The server-side initialization vector counter.
+ * \param shared_secret     The computed shared secret for this session.
+ *
+ * \returns a status code indicating success or failure.
+ *      - STATUS_SUCCESS on success.
+ *      - a non-zero error code on failure.
+ */
+status get_and_verify_status(
+    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
+    uint64_t* server_iv, vccrypt_buffer_t* shared_secret);
+
 #if defined(__cplusplus)
 }
 #endif /* defined(__cplusplus) */
