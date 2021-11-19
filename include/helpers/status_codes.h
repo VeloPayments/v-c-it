@@ -136,6 +136,13 @@
 #define ERROR_STATUS_STATUS                             126
 #define ERROR_STATUS_OFFSET                             127
 #define ERROR_DECODE_STATUS_DATA                        128
+#define ERROR_SEND_CLOSE_REQ                            129
+#define ERROR_RECV_CLOSE_RESP                           130
+#define ERROR_DECODE_CLOSE                              131
+#define ERROR_CLOSE_REQUEST_ID                          132
+#define ERROR_CLOSE_STATUS                              133
+#define ERROR_CLOSE_OFFSET                              134
+#define ERROR_DECODE_CLOSE_DATA                         135
 
 /* status codes specific to submit_multiple_txns test. */
 #define ERROR_TXN1_PREV_ID_MISMATCH                     200
