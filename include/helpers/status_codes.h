@@ -129,6 +129,13 @@
 #define ERROR_TXN_BLOCK_ID_STATUS                       119
 #define ERROR_TXN_BLOCK_ID_OFFSET                       120
 #define ERROR_DECODE_TXN_BLOCK_ID_DATA                  121
+#define ERROR_SEND_STATUS_REQ                           122
+#define ERROR_RECV_STATUS_RESP                          123
+#define ERROR_DECODE_STATUS                             124
+#define ERROR_STATUS_REQUEST_ID                         125
+#define ERROR_STATUS_STATUS                             126
+#define ERROR_STATUS_OFFSET                             127
+#define ERROR_DECODE_STATUS_DATA                        128
 
 /* status codes specific to submit_multiple_txns test. */
 #define ERROR_TXN1_PREV_ID_MISMATCH                     200
