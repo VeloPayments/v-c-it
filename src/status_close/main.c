@@ -145,6 +145,15 @@ int main(int argc, char* argv[])
         goto cleanup_connection;
     }
 
+    /* send the close request. */
+    retval =
+        send_and_verify_close_connection(
+            &sock, &suite, &client_iv, &server_iv, &shared_secret);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_connection;
+    }
+
     /* success. */
     retval = STATUS_SUCCESS;
     goto cleanup_connection;
