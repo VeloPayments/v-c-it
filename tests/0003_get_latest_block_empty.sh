@@ -38,6 +38,44 @@ chmod u+w,o+r $agentd_dir/etc/agentd.conf
 cd $testdir
 $vctool_binary -N -o test.priv keygen
 $vctool_binary -k test.priv -o test.pub pubkey
+$vctool_binary -N -o endorser.priv keygen
+$vctool_binary -k endorser.priv -o endorser.pub pubkey
+
+#create endorser config file
+cat > endorse.cfg <<'endcfg'
+entities {
+    agentd
+}
+
+verbs for agentd {
+    latest_block_id_get     c5b0eb04-6b24-48be-b7d9-bf9083a4be5d
+    block_id_by_height_get  915a5ef4-8f96-4ef5-9588-0a75b1cae68d
+    block_get               f382e365-1224-43b4-924a-1de4d9f4cf25
+    transaction_get         7df210d6-f00b-47c4-a608-6f3f1df7511a
+    transaction_submit      ef560d24-eea6-4847-9009-464b127f249b
+    artifact_get            fc0e22ea-1e77-4ea4-a2ae-08be5ff73ccc
+    assert_latest_block_id  447617b4-a847-437c-b62b-5bc6a94206fa
+    sentinel_extend_api     c41b053c-6b4a-40a1-981b-882bdeffe978
+}
+
+roles for agentd {
+    reader {
+        latest_block_id_get
+        block_get
+        transaction_get
+        artifact_get
+        assert_latest_block_id
+    }
+
+    submitter extends reader {
+        transaction_submit
+    }
+
+    extended_sentinel extends reader {
+        sentinel_extend_api
+    }
+}
+endcfg
 
 #create a private key for agentd
 mkdir -p $agentd_dir/priv
@@ -47,15 +85,23 @@ $vctool_binary -N -o agentd.priv keygen
 $vctool_binary -k agentd.priv -o agentd.pub pubkey
 chown veloagent:veloagent agentd.priv
 cp agentd.pub $testdir
-cp $testdir/test.pub $agentd_dir/pub
-chown veloagent:veloagent $agentd_dir/pub/test.pub
+cp $testdir/endorser.pub $agentd_dir/pub
+chown veloagent:veloagent $agentd_dir/pub/endorser.pub
+chmod u+rw,g+r,o+r $agentd_dir/pub/endorser.pub
 
 cd ..
+echo "endorser key pub/endorser.pub" >> etc/agentd.conf
 echo "private key priv/agentd.priv" >> etc/agentd.conf
 echo "" >> etc/agentd.conf
 echo "authorized entities {" >> etc/agentd.conf
-echo "    pub/test.pub" >> etc/agentd.conf
+echo "    pub/test.pub.endorsed" >> etc/agentd.conf
 echo "}" >> etc/agentd.conf
+
+cd $testdir
+$vctool_binary -Dagentd=agentd.pub -k endorser.priv -i test.pub \
+    -o test.pub.endorsed -E endorse.cfg -P agentd:latest_block_id_get endorse
+cp $testdir/test.pub.endorsed $agentd_dir/pub
+chown veloagent:veloagent $agentd_dir/pub/test.pub.endorsed
 
 #verify that we can start agentd
 cd $agentd_dir
