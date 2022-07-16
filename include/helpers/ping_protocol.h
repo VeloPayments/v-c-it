@@ -26,7 +26,21 @@ extern "C" {
  */
 status ping_protocol_sendreq_ping(
     ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    vccrypt_buffer_t* shared_secret, uint32_t offset);
+    vccrypt_buffer_t* shared_secret,
+    const vpr_uuid* ping_sentinel_id, uint32_t offset);
+
+/**
+ * \brief Send a ping response request to the extended ping API.
+ *
+ * \param sock          The socket to which this request is written.
+ * \param suite         The crypto suite to use for this request.
+ * \param client_iv     Pointer to the client IV, updated by this call.
+ * \param shared_secret The shared secret to use ofr this request.
+ * \param offset        The offset for this request.
+ */
+status ping_protocol_sendreq_ping_response(
+    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
+    vccrypt_buffer_t* shared_secret, uint64_t offset);
 
 #if defined(__cplusplus)
 }

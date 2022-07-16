@@ -7,7 +7,6 @@
  */
 
 #include <helpers/ping_protocol.h>
-#include <helpers/ping_protocol/serialization.h>
 
 /**
  * \brief Main entry point for the ping sentinel test utility.
