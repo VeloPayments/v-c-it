@@ -3,7 +3,7 @@
  *
  * \brief Helpers for connecting to agentd.
  *
- * \copyright 2021 Velo Payments, Inc.  All rights reserved.
+ * \copyright 2021-2022 Velo Payments, Inc.  All rights reserved.
  */
 
 #pragma once
@@ -323,6 +323,25 @@ status get_and_verify_txn_block_id(
     ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
     uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
     const vpr_uuid* txn_id, vpr_uuid* block_id);
+
+/**
+ * \brief Request that the extended API be enabled for this entity on this
+ * connection.
+ *
+ * \param sock              The socket connection with agentd.
+ * \param suite             The crypto suite to use for this operation.
+ * \param client_iv         The client-side initialization vector counter.
+ * \param server_iv         The server-side initialization vector counter.
+ * \param shared_secret     The computed shared secret for this session.
+ * \param offset            The offset to use for this request.
+ *
+ * \returns a status code indicating success or failure.
+ *      - STATUS_SUCCESS on success.
+ *      - a non-zero error code on failure.
+ */
+status send_and_verify_enable_extended_api(
+    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
+    uint64_t* server_iv, vccrypt_buffer_t* shared_secret, uint32_t offset);
 
 /**
  * \brief Get and verify the connection status.

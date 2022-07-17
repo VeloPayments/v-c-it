@@ -143,6 +143,13 @@
 #define ERROR_CLOSE_STATUS                              133
 #define ERROR_CLOSE_OFFSET                              134
 #define ERROR_DECODE_CLOSE_DATA                         135
+#define ERROR_EXTENDED_API_ENABLE_REQ                   136
+#define ERROR_RECV_EXTENDED_API_ENABLE_RESP             137
+#define ERROR_DECODE_EXTENDED_API_ENABLE_HEADER         138
+#define ERROR_EXTENDED_API_ENABLE_REQUEST_ID            139
+#define ERROR_EXTENDED_API_ENABLE_STATUS                140
+#define ERROR_EXTENDED_API_ENABLE_OFFSET                141
+#define ERROR_DECODE_EXTENDED_API_ENABLE                142
 
 /* status codes specific to submit_multiple_txns test. */
 #define ERROR_TXN1_PREV_ID_MISMATCH                     200
