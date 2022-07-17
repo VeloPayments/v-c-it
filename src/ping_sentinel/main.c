@@ -60,6 +60,7 @@ int main(int argc, char* argv[])
     uint64_t client_iv, server_iv;
     const vccrypt_buffer_t* client_sign_priv;
     const rcpr_uuid* client_id;
+    uint32_t offset_ctr = 5U;
 
     /* register the velo v1 suite. */
     vccrypt_suite_register_velo_v1();
@@ -136,7 +137,16 @@ int main(int argc, char* argv[])
         goto cleanup_connection;
     }
 
-    /* TODO - enable the extended API. */
+    /* enable the extended API. */
+    retval =
+        send_and_verify_enable_extended_api(
+            &sock, &suite, &client_iv, &server_iv, &shared_secret,
+            offset_ctr++);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_connection;
+    }
+
     /* TODO - until a termination signal is received, read requests and respond
      * to them. */
 
