@@ -168,3 +168,12 @@
 #define ERROR_TXN1_BLOCK_ID_MISMATCH                    213
 #define ERROR_TXN2_BLOCK_ID_MISMATCH                    214
 #define ERROR_TXN3_BLOCK_ID_MISMATCH                    215
+
+/* status codes specific to the ping protocol sentinel. */
+#define ERROR_READ_EXTENDED_API_RESPONSE                200
+#define ERROR_READ_EXTENDED_API_RESPONSE_DECODE_HEADER  201
+#define ERROR_READ_EXTENDED_API_BAD_REQUEST_ID          202
+#define ERROR_READ_EXTENDED_API_DECODE_RESPONSE         203
+#define ERROR_READ_EXTENDED_API_OUT_OF_MEMORY           204
+#define ERROR_READ_EXTENDED_API_INVALID_VERB            205
+
