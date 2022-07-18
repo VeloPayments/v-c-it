@@ -150,6 +150,13 @@
 #define ERROR_EXTENDED_API_ENABLE_STATUS                140
 #define ERROR_EXTENDED_API_ENABLE_OFFSET                141
 #define ERROR_DECODE_EXTENDED_API_ENABLE                142
+#define ERROR_PING_REQUEST_SEND                         143
+#define ERROR_PING_RESPONSE_RECEIVE                     144
+#define ERROR_PING_RESPONSE_DECODE_HEADER               145
+#define ERROR_PING_RESPONSE_ID                          146
+#define ERROR_PING_RESPONSE_STATUS_CODE                 147
+#define ERROR_PING_RESPONSE_OFFSET                      148
+#define ERROR_PING_RESPONSE_DECODE                      149
 
 /* status codes specific to submit_multiple_txns test. */
 #define ERROR_TXN1_PREV_ID_MISMATCH                     200

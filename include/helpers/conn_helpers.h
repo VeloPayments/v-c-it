@@ -344,6 +344,26 @@ status send_and_verify_enable_extended_api(
     uint64_t* server_iv, vccrypt_buffer_t* shared_secret, uint32_t offset);
 
 /**
+ * \brief Send an extended api ping protocol request and response.
+ *
+ * \param sock              The socket connection with agentd.
+ * \param suite             The crypto suite to use for this operation.
+ * \param client_iv         The client-side initialization vector counter.
+ * \param server_iv         The server-side initialization vector counter.
+ * \param shared_secret     The computed shared secret for this session.
+ * \param offset            The offset to use for this request.
+ * \param ping_sentinel_id  The UUID of the ping sentinel.
+ *
+ * \returns a status code indicating success or failure.
+ *      - STATUS_SUCCESS on success.
+ *      - a non-zero error code on failure.
+ */
+status send_and_verify_ping_request(
+    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
+    uint64_t* server_iv, vccrypt_buffer_t* shared_secret, uint32_t offset,
+    const vpr_uuid* ping_sentinel_id);
+
+/**
  * \brief Get and verify the connection status.
  *
  * \param sock              The socket connection with agentd.
