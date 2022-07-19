@@ -54,7 +54,9 @@ int main(int argc, char* argv[])
     vccrypt_buffer_t shared_secret;
     uint64_t client_iv, server_iv;
     const vccrypt_buffer_t* client_sign_priv;
+    const rcpr_uuid* ping_sentinel_id;
     const rcpr_uuid* client_id;
+    vcblockchain_entity_public_cert* ping_sentinel_cert;
 
     /* register the velo v1 suite. */
     vccrypt_suite_register_velo_v1();
@@ -103,6 +105,24 @@ int main(int argc, char* argv[])
         goto cleanup_parser_opts;
     }
 
+    /* open the public key for the ping sentinel. */
+    retval =
+        entity_public_certificate_create_from_file(
+            &ping_sentinel_cert, &file, &suite, "ping_sentinel.pub");
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_file;
+    }
+
+    /* get the ping sentinel artifact id. */
+    retval =
+        vcblockchain_entity_get_artifact_id(
+            &ping_sentinel_id, ping_sentinel_cert);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_ping_sentinel_cert;
+    }
+
     /* connect to agentd. */
     retval =
         agentd_connection_init(
@@ -110,7 +130,7 @@ int main(int argc, char* argv[])
             &suite, "127.0.0.1", 4931, "ping_client.priv", "agentd.pub");
     if (STATUS_SUCCESS != retval)
     {
-        goto cleanup_file;
+        goto cleanup_ping_sentinel_cert;
     }
 
     /* get the client artifact id. */
@@ -157,6 +177,16 @@ cleanup_connection:
 
     dispose((disposable_t*)&shared_secret);
     dispose((disposable_t*)&sock);
+
+cleanup_ping_sentinel_cert:
+    release_retval =
+        resource_release(
+            vcblockchain_entity_public_cert_resource_handle(
+                ping_sentinel_cert));
+    if (STATUS_SUCCESS != release_retval)
+    {
+        retval = release_retval;
+    }
 
 cleanup_file:
     dispose((disposable_t*)&file);
