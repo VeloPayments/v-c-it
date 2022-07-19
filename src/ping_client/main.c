@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
     retval =
         send_and_verify_ping_request(
             &sock, &suite, &client_iv, &server_iv, &shared_secret, offset_ctr++,
-            (const vpr_uuid*)&ping_sentinel_id);
+            (const vpr_uuid*)ping_sentinel_id);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_connection;
