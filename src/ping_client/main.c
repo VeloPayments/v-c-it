@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
     retval =
         agentd_connection_init(
             &sock, &client_priv, &shared_secret, &client_iv, &server_iv, &file,
-            &suite, "127.0.0.1", 4931, "ping_sentinel.priv", "agentd.pub");
+            &suite, "127.0.0.1", 4931, "ping_client.priv", "agentd.pub");
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_file;
