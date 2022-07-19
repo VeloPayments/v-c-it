@@ -57,6 +57,7 @@ int main(int argc, char* argv[])
     const rcpr_uuid* ping_sentinel_id;
     const rcpr_uuid* client_id;
     vcblockchain_entity_public_cert* ping_sentinel_cert;
+    uint32_t offset_ctr = 5U;
 
     /* register the velo v1 suite. */
     vccrypt_suite_register_velo_v1();
@@ -151,7 +152,15 @@ int main(int argc, char* argv[])
         goto cleanup_connection;
     }
 
-    /* TODO - here. */
+    /* Send a ping request and verify the response. */
+    retval =
+        send_and_verify_ping_request(
+            &sock, &suite, &client_iv, &server_iv, &shared_secret, offset_ctr++,
+            (const vpr_uuid*)&ping_sentinel_id);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_connection;
+    }
 
     /* send the close request. */
     retval =
