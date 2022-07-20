@@ -81,7 +81,6 @@ status send_and_verify_ping_request(
             stderr, "Unexpected extended api ping response id (%x).\n",
             request_id);
         retval = ERROR_PING_RESPONSE_ID;
-        goto cleanup_buffer;
     }
 
     /* verify that the status was successful. */
@@ -91,7 +90,6 @@ status send_and_verify_ping_request(
             stderr, "Unexpected extended api ping response status (%x).\n",
             status_code);
         retval = ERROR_PING_RESPONSE_STATUS_CODE;
-        goto cleanup_buffer;
     }
 
     /* verify that the offset is correct. */
@@ -101,6 +99,11 @@ status send_and_verify_ping_request(
             stderr, "Unexpected extended api ping response offset (%x).\n",
             resp_offset);
         retval = ERROR_PING_RESPONSE_OFFSET;
+    }
+
+    /* if we failed one of the checks above, error out. */
+    if (STATUS_SUCCESS != retval)
+    {
         goto cleanup_buffer;
     }
 
