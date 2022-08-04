@@ -21,7 +21,7 @@
  * \param status        The status code for this request.
  */
 status ping_protocol_sendreq_ping_response(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
+    RCPR_SYM(psock)* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
     vccrypt_buffer_t* shared_secret, uint64_t offset, uint32_t status_code)
 {
     status retval;

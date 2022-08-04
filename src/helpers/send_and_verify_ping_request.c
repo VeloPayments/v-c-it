@@ -18,6 +18,7 @@
  * \brief Send an extended api ping protocol request and response.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -30,8 +31,9 @@
  *      - a non-zero error code on failure.
  */
 status send_and_verify_ping_request(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret, uint32_t offset,
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret, uint32_t offset,
     const vpr_uuid* ping_sentinel_id)
 {
     status retval;
@@ -55,7 +57,8 @@ status send_and_verify_ping_request(
     /* get the response. */
     retval =
         vcblockchain_protocol_recvresp(
-            sock, suite, server_iv, shared_secret, &ping_request_response);
+            sock, alloc, suite, server_iv, shared_secret,
+            &ping_request_response);
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Failed to receive extended api ping response.\n");

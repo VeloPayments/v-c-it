@@ -8,9 +8,9 @@
 
 #pragma once
 
+#include <rcpr/psock.h>
 #include <rcpr/status.h>
 #include <vcblockchain/entity_cert.h>
-#include <vcblockchain/ssock.h>
 #include <vctool/file.h>
 
 #if defined(__cplusplus)
@@ -22,16 +22,20 @@ extern "C" {
  * the connection.
  *
  * This method initializes and returns a shared secret, client_iv, server_iv,
- * entity private certificate, and ssock instance on success. The shared secret
- * and ssock instance are both disposable and must be disposed by calling \ref
- * dispose when they are no longer needed. The private entity certificate is a
- * resource and must have its resource handle released by calling \ref
- * resource_release when it is no longer needed. The two IV values are used in
- * subsequent request and response calls in order to derive the per-message key
- * needed to encrypt or decrypt these messages.
+ * entity private certificate, and psock instance on success. The shared secret
+ * is disposable and must be disposed by calling \ref
+ * dispose when it is no longer needed. The psock instance is a resource and
+ * must be released by calling \ref resource_release when it is no longer
+ * needed. The private entity certificate is a resource and must have its
+ * resource handle released by calling \ref resource_release when it is no
+ * longer needed. The two IV values are used in subsequent request and response
+ * calls in order to derive the per-message key needed to encrypt or decrypt
+ * these messages.
  *
- * \param sock          Pointer to a ssock struct that will be initialized on
- *                      success with the socket connection to agentd.
+ * \param sock          Pointer to a psock pointer that will receive the psock
+ *                      instance on success with the socket connection to
+ *                      agentd.
+ * \param alloc         The allocator to use for this operation.
  * \param cert          Pointer to the entity private certificate pointer that
  *                      will receive the client private entity certificate on
  *                      success.
@@ -54,15 +58,17 @@ extern "C" {
  *      - a non-zero error code on failure.
  */
 status agentd_connection_init(
-    ssock* sock, vcblockchain_entity_private_cert** cert,
-    vccrypt_buffer_t* shared_secret, uint64_t* client_iv, uint64_t* server_iv,
-    file* file, vccrypt_suite_options_t* suite, const char* hostaddr,
-    unsigned int hostport, const char* clientpriv, const char* serverpub);
+    RCPR_SYM(psock)** sock, RCPR_SYM(allocator)* alloc,
+    vcblockchain_entity_private_cert** cert, vccrypt_buffer_t* shared_secret,
+    uint64_t* client_iv, uint64_t* server_iv, file* file,
+    vccrypt_suite_options_t* suite, const char* hostaddr, unsigned int hostport,
+    const char* clientpriv, const char* serverpub);
 
 /**
  * \brief Submit and verify the response from submitting a transaction.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -77,16 +83,17 @@ status agentd_connection_init(
  *      - a non-zero error code on failure.
  */
 status submit_and_verify_txn(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
-    const vpr_uuid* txn_uuid, const vpr_uuid* artifact_uuid,
-    const vccrypt_buffer_t* cert);
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret, const vpr_uuid* txn_uuid,
+    const vpr_uuid* artifact_uuid, const vccrypt_buffer_t* cert);
 
 /**
  * \brief Request the next block ID for a given block ID from the agentd
  * instance.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -99,15 +106,17 @@ status submit_and_verify_txn(
  *      - a non-zero error code on failure.
  */
 status get_and_verify_next_block_id(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
-    const vpr_uuid* block_id, vpr_uuid* next_block_id);
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret, const vpr_uuid* block_id,
+    vpr_uuid* next_block_id);
 
 /**
  * \brief Request the prev block ID for a given block ID from the agentd
  * instance.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -120,14 +129,16 @@ status get_and_verify_next_block_id(
  *      - a non-zero error code on failure.
  */
 status get_and_verify_prev_block_id(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
-    const vpr_uuid* block_id, vpr_uuid* prev_block_id);
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret, const vpr_uuid* block_id,
+    vpr_uuid* prev_block_id);
 
 /**
  * \brief Request a block by ID from the agentd instance.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -144,15 +155,17 @@ status get_and_verify_prev_block_id(
  *      - a non-zero error code on failure.
  */
 status get_and_verify_block(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
-    const vpr_uuid* block_id, vccrypt_buffer_t* block_cert,
-    vpr_uuid* prev_block_id, vpr_uuid* next_block_id);
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret, const vpr_uuid* block_id,
+    vccrypt_buffer_t* block_cert, vpr_uuid* prev_block_id,
+    vpr_uuid* next_block_id);
 
 /**
  * \brief Request the current last ID from the agentd instance.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -164,15 +177,16 @@ status get_and_verify_block(
  *      - a non-zero error code on failure.
  */
 status get_and_verify_last_block_id(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
-    vpr_uuid* last_block_id);
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret, vpr_uuid* last_block_id);
 
 /**
  * \brief Request the first txn ID for a given artifact ID from the agentd
  * instance.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -185,15 +199,17 @@ status get_and_verify_last_block_id(
  *      - a non-zero error code on failure.
  */
 status get_and_verify_artifact_first_txn_id(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
-    const vpr_uuid* artifact_id, vpr_uuid* first_txn_id);
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret, const vpr_uuid* artifact_id,
+    vpr_uuid* first_txn_id);
 
 /**
  * \brief Request the last txn ID for a given artifact ID from the agentd
  * instance.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -206,14 +222,16 @@ status get_and_verify_artifact_first_txn_id(
  *      - a non-zero error code on failure.
  */
 status get_and_verify_artifact_last_txn_id(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
-    const vpr_uuid* artifact_id, vpr_uuid* last_txn_id);
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret, const vpr_uuid* artifact_id,
+    vpr_uuid* last_txn_id);
 
 /**
  * \brief Request a transaction by ID from the agentd instance.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -235,16 +253,17 @@ status get_and_verify_artifact_last_txn_id(
  *      - a non-zero error code on failure.
  */
 status get_and_verify_txn(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
-    const vpr_uuid* txn_id, vccrypt_buffer_t* txn_cert,
-    vpr_uuid* prev_txn_id, vpr_uuid* next_txn_id, vpr_uuid* artifact_id,
-    vpr_uuid* block_id);
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret, const vpr_uuid* txn_id,
+    vccrypt_buffer_t* txn_cert, vpr_uuid* prev_txn_id, vpr_uuid* next_txn_id,
+    vpr_uuid* artifact_id, vpr_uuid* block_id);
 
 /**
  * \brief Request a block id by height.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -257,15 +276,16 @@ status get_and_verify_txn(
  *      - a non-zero error code on failure.
  */
 status get_and_verify_block_id_by_height(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret, uint64_t height,
-    vpr_uuid* block_id);
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret, uint64_t height, vpr_uuid* block_id);
 
 /**
  * \brief Request the next transaction ID for a given transaction ID from the
  * agentd instance.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -278,15 +298,17 @@ status get_and_verify_block_id_by_height(
  *      - a non-zero error code on failure.
  */
 status get_and_verify_next_txn_id(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
-    const vpr_uuid* txn_id, vpr_uuid* next_txn_id);
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret, const vpr_uuid* txn_id,
+    vpr_uuid* next_txn_id);
 
 /**
  * \brief Request the prev transaction ID for a given transaction ID from the
  * agentd instance.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -299,15 +321,17 @@ status get_and_verify_next_txn_id(
  *      - a non-zero error code on failure.
  */
 status get_and_verify_prev_txn_id(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
-    const vpr_uuid* txn_id, vpr_uuid* prev_txn_id);
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret, const vpr_uuid* txn_id,
+    vpr_uuid* prev_txn_id);
 
 /**
  * \brief Request the transaction block ID for a given transaction ID from the
  * agentd instance.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -320,15 +344,17 @@ status get_and_verify_prev_txn_id(
  *      - a non-zero error code on failure.
  */
 status get_and_verify_txn_block_id(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
-    const vpr_uuid* txn_id, vpr_uuid* block_id);
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret, const vpr_uuid* txn_id,
+    vpr_uuid* block_id);
 
 /**
  * \brief Request that the extended API be enabled for this entity on this
  * connection.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -340,13 +366,15 @@ status get_and_verify_txn_block_id(
  *      - a non-zero error code on failure.
  */
 status send_and_verify_enable_extended_api(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret, uint32_t offset);
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret, uint32_t offset);
 
 /**
  * \brief Send an extended api ping protocol request and response.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -359,14 +387,16 @@ status send_and_verify_enable_extended_api(
  *      - a non-zero error code on failure.
  */
 status send_and_verify_ping_request(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret, uint32_t offset,
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret, uint32_t offset,
     const vpr_uuid* ping_sentinel_id);
 
 /**
  * \brief Get and verify the connection status.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -377,13 +407,15 @@ status send_and_verify_ping_request(
  *      - a non-zero error code on failure.
  */
 status get_and_verify_status(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret);
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret);
 
 /**
  * \brief Send and verify the close connection request.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -394,8 +426,9 @@ status get_and_verify_status(
  *      - a non-zero error code on failure.
  */
 status send_and_verify_close_connection(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret);
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret);
 
 #if defined(__cplusplus)
 }

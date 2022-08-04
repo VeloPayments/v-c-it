@@ -3,20 +3,21 @@
  *
  * \brief Submit a transaction and verify the results.
  *
- * \copyright 2021 Velo Payments, Inc.  All rights reserved.
+ * \copyright 2021-2022 Velo Payments, Inc.  All rights reserved.
  */
 
+#include <helpers/conn_helpers.h>
 #include <helpers/status_codes.h>
 #include <rcpr/status.h>
 #include <stdio.h>
 #include <vcblockchain/protocol.h>
 #include <vcblockchain/protocol/data.h>
-#include <vcblockchain/ssock.h>
 
 /**
  * \brief Submit and verify the response from submitting a transaction.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -31,10 +32,10 @@
  *      - a non-zero error code on failure.
  */
 status submit_and_verify_txn(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
-    const vpr_uuid* txn_uuid, const vpr_uuid* artifact_uuid,
-    const vccrypt_buffer_t* cert)
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret, const vpr_uuid* txn_uuid,
+    const vpr_uuid* artifact_uuid, const vccrypt_buffer_t* cert)
 {
     status retval;
     uint32_t request_id, status, offset;
@@ -65,7 +66,7 @@ status submit_and_verify_txn(
     /* get response from submit. */
     retval =
         vcblockchain_protocol_recvresp(
-            sock, suite, server_iv, shared_secret, &submit_response);
+            sock, alloc, suite, server_iv, shared_secret, &submit_response);
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error receiving response from submit.\n");

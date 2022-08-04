@@ -3,7 +3,7 @@
  *
  * \brief Request a txn by id from agentd.
  *
- * \copyright 2021 Velo Payments, Inc.  All rights reserved.
+ * \copyright 2021-2022 Velo Payments, Inc.  All rights reserved.
  */
 
 #include <helpers/conn_helpers.h>
@@ -17,6 +17,7 @@
  * \brief Request a transaction by ID from the agentd instance.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -38,11 +39,11 @@
  *      - a non-zero error code on failure.
  */
 status get_and_verify_txn(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
-    const vpr_uuid* txn_id, vccrypt_buffer_t* txn_cert,
-    vpr_uuid* prev_txn_id, vpr_uuid* next_txn_id, vpr_uuid* artifact_id,
-    vpr_uuid* block_id)
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret, const vpr_uuid* txn_id,
+    vccrypt_buffer_t* txn_cert, vpr_uuid* prev_txn_id, vpr_uuid* next_txn_id,
+    vpr_uuid* artifact_id, vpr_uuid* block_id)
 {
     status retval;
     uint32_t expected_txn_get_offset = 0x1234;
@@ -78,7 +79,7 @@ status get_and_verify_txn(
     /* get response. */
     retval =
         vcblockchain_protocol_recvresp(
-            sock, suite, server_iv, shared_secret, &get_txn_response);
+            sock, alloc, suite, server_iv, shared_secret, &get_txn_response);
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Failed to receive get txn response.\n");

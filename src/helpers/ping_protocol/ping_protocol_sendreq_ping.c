@@ -20,7 +20,7 @@
  * \param offset        The offset for this request.
  */
 status ping_protocol_sendreq_ping(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
+    RCPR_SYM(psock)* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
     vccrypt_buffer_t* shared_secret,
     const vpr_uuid* ping_sentinel_id, uint32_t offset)
 {

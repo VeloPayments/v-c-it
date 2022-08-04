@@ -3,7 +3,7 @@
  *
  * \brief Main entry point for submit transaction and read block test utility.
  *
- * \copyright 2021 Velo Payments.  See License.txt for license terms.
+ * \copyright 2021-2022 Velo Payments.  See License.txt for license terms.
  */
 
 #include <stdio.h>
@@ -18,6 +18,8 @@
 #include <vpr/allocator/malloc_allocator.h>
 #include <vpr/parameters.h>
 
+RCPR_IMPORT_allocator_as(rcpr);
+RCPR_IMPORT_psock;
 RCPR_IMPORT_resource;
 RCPR_IMPORT_uuid;
 
@@ -59,6 +61,7 @@ int main(int argc, char* argv[])
 
     int retval, release_retval;
     allocator_options_t alloc_opts;
+    rcpr_allocator* alloc;
     vccrypt_suite_options_t suite;
     vccert_builder_options_t builder_opts;
     vccert_parser_options_t parser_options;
@@ -70,7 +73,7 @@ int main(int argc, char* argv[])
     const vccrypt_buffer_t* client_sign_priv;
     const rcpr_uuid* client_id;
     file file;
-    ssock sock;
+    psock* sock;
     uint64_t client_iv, server_iv;
     vpr_uuid txn_uuid, artifact_uuid, first_txn_uuid, last_txn_uuid;
     vpr_uuid next_block_id, prev_block_id, prev_block_id2, latest_block_id;
@@ -84,6 +87,13 @@ int main(int argc, char* argv[])
     /* initialize the allocator. */
     malloc_allocator_options_init(&alloc_opts);
 
+    /* create the RCPR allocator. */
+    retval = rcpr_malloc_allocator_create(&alloc);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_allocator;
+    }
+
     /* initialize the vccrypt suite. */
     retval =
         vccrypt_suite_options_init(&suite, &alloc_opts, VCCRYPT_SUITE_VELO_V1);
@@ -91,7 +101,7 @@ int main(int argc, char* argv[])
     {
         fprintf(stderr, "Error initializing crypto suite.\n");
         retval = ERROR_CRYPTO_SUITE_INIT;
-        goto cleanup_allocator;
+        goto cleanup_rcpr_allocator;
     }
 
     /* initialize certificate builder options. */
@@ -128,8 +138,8 @@ int main(int argc, char* argv[])
     /* connect to agentd. */
     retval =
         agentd_connection_init(
-            &sock, &client_priv, &shared_secret, &client_iv, &server_iv, &file,
-            &suite, "127.0.0.1", 4931, "test.priv", "agentd.pub");
+            &sock, alloc, &client_priv, &shared_secret, &client_iv, &server_iv,
+            &file, &suite, "127.0.0.1", 4931, "test.priv", "agentd.pub");
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_file;
@@ -168,8 +178,8 @@ int main(int argc, char* argv[])
     /* submit and verify the certificate. */
     retval =
         submit_and_verify_txn(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn_uuid,
-            &artifact_uuid, &cert_buffer);
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
+            &txn_uuid, &artifact_uuid, &cert_buffer);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_transaction_cert;
@@ -182,7 +192,7 @@ int main(int argc, char* argv[])
     /* get the root block's next block id. */
     retval =
         get_and_verify_next_block_id(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret,
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
             (const vpr_uuid*)vccert_certificate_type_uuid_root_block,
             &next_block_id);
     if (STATUS_SUCCESS != retval)
@@ -193,7 +203,7 @@ int main(int argc, char* argv[])
     /* get the new block. */
     retval =
         get_and_verify_block(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret,
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
             &next_block_id, &block_cert, &prev_block_id, &next_next_block_id);
     if (STATUS_SUCCESS != retval)
     {
@@ -230,7 +240,7 @@ int main(int argc, char* argv[])
     /* get the latest block id. */
     retval =
         get_and_verify_last_block_id(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret,
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
             &latest_block_id);
     if (STATUS_SUCCESS != retval)
     {
@@ -248,7 +258,7 @@ int main(int argc, char* argv[])
     /* get the next block's previous block id. */
     retval =
         get_and_verify_prev_block_id(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret,
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
             &next_block_id, &prev_block_id2);
     if (STATUS_SUCCESS != retval)
     {
@@ -269,7 +279,7 @@ int main(int argc, char* argv[])
     /* get and verify artifact get first txn id by artifact id. */
     retval =
         get_and_verify_artifact_first_txn_id(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret,
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
             &artifact_uuid, &first_txn_uuid);
     if (STATUS_SUCCESS != retval)
     {
@@ -289,7 +299,7 @@ int main(int argc, char* argv[])
     /* get and verify artifact get last txn id by artifact id. */
     retval =
         get_and_verify_artifact_last_txn_id(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret,
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
             &artifact_uuid, &last_txn_uuid);
     if (STATUS_SUCCESS != retval)
     {
@@ -309,9 +319,9 @@ int main(int argc, char* argv[])
     /* get and verify transaction by id. */
     retval =
         get_and_verify_txn(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn_uuid,
-            &txn_cert, &prev_txn_uuid, &next_txn_uuid, &txn_artifact_uuid,
-            &txn_block_uuid);
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
+            &txn_uuid, &txn_cert, &prev_txn_uuid, &next_txn_uuid,
+            &txn_artifact_uuid, &txn_block_uuid);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_block_cert;
@@ -360,7 +370,7 @@ int main(int argc, char* argv[])
     /* get and verify the first block id by height. */
     retval =
         get_and_verify_block_id_by_height(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret, 1,
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret, 1,
             &block_height_1_block_uuid);
     if (STATUS_SUCCESS != retval)
     {
@@ -397,7 +407,12 @@ cleanup_connection:
     }
 
     dispose((disposable_t*)&shared_secret);
-    dispose((disposable_t*)&sock);
+
+    release_retval = resource_release(psock_resource_handle(sock));
+    if (STATUS_SUCCESS != release_retval)
+    {
+        retval = release_retval;
+    }
 
 cleanup_file:
     dispose((disposable_t*)&file);
@@ -410,6 +425,13 @@ cleanup_builder_opts:
 
 cleanup_crypto_suite:
     dispose((disposable_t*)&suite);
+
+cleanup_rcpr_allocator:
+    release_retval = resource_release(rcpr_allocator_resource_handle(alloc));
+    if (STATUS_SUCCESS != release_retval)
+    {
+        retval = release_retval;
+    }
 
 cleanup_allocator:
     dispose((disposable_t*)&alloc_opts);
