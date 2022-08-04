@@ -18,6 +18,7 @@
  * connection.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -29,8 +30,9 @@
  *      - a non-zero error code on failure.
  */
 status send_and_verify_enable_extended_api(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret, uint32_t offset)
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret, uint32_t offset)
 {
     status retval;
     vccrypt_buffer_t enable_extended_api_response;
@@ -60,7 +62,7 @@ status send_and_verify_enable_extended_api(
     /* get response. */
     retval =
         vcblockchain_protocol_recvresp(
-            sock, suite, server_iv, shared_secret,
+            sock, alloc, suite, server_iv, shared_secret,
             &enable_extended_api_response);
     if (STATUS_SUCCESS != retval)
     {

@@ -14,6 +14,8 @@
 #include <vpr/allocator/malloc_allocator.h>
 #include <vpr/parameters.h>
 
+RCPR_IMPORT_allocator_as(rcpr);
+RCPR_IMPORT_psock;
 RCPR_IMPORT_resource;
 RCPR_IMPORT_uuid;
 
@@ -45,11 +47,12 @@ int main(int argc, char* argv[])
     (void)argv;
     status retval, release_retval;
     allocator_options_t alloc_opts;
+    rcpr_allocator* alloc;
     vccrypt_suite_options_t suite;
     vccert_builder_options_t builder_opts;
     vccert_parser_options_t parser_options;
     file file;
-    ssock sock;
+    psock* sock;
     vcblockchain_entity_private_cert* client_priv;
     vccrypt_buffer_t shared_secret;
     uint64_t client_iv, server_iv;
@@ -65,6 +68,13 @@ int main(int argc, char* argv[])
     /* initialize the allocator. */
     malloc_allocator_options_init(&alloc_opts);
 
+    /* create the RCPR allocator. */
+    retval = rcpr_malloc_allocator_create(&alloc);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_allocator;
+    }
+
     /* initialize the vccrypt suite. */
     retval =
         vccrypt_suite_options_init(&suite, &alloc_opts, VCCRYPT_SUITE_VELO_V1);
@@ -72,7 +82,7 @@ int main(int argc, char* argv[])
     {
         fprintf(stderr, "Error initializing crypto suite.\n");
         retval = ERROR_CRYPTO_SUITE_INIT;
-        goto cleanup_allocator;
+        goto cleanup_rcpr_allocator;
     }
 
     /* initialize certificate builder options. */
@@ -127,8 +137,8 @@ int main(int argc, char* argv[])
     /* connect to agentd. */
     retval =
         agentd_connection_init(
-            &sock, &client_priv, &shared_secret, &client_iv, &server_iv, &file,
-            &suite, "127.0.0.1", 4931, "ping_client.priv", "agentd.pub");
+            &sock, alloc, &client_priv, &shared_secret, &client_iv, &server_iv,
+            &file, &suite, "127.0.0.1", 4931, "ping_client.priv", "agentd.pub");
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_ping_sentinel_cert;
@@ -155,8 +165,8 @@ int main(int argc, char* argv[])
     /* Send a ping request and verify the response. */
     retval =
         send_and_verify_ping_request(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret, offset_ctr++,
-            (const vpr_uuid*)ping_sentinel_id);
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
+            offset_ctr++, (const vpr_uuid*)ping_sentinel_id);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_connection;
@@ -165,7 +175,7 @@ int main(int argc, char* argv[])
     /* send the close request. */
     retval =
         send_and_verify_close_connection(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret);
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_connection;
@@ -185,7 +195,12 @@ cleanup_connection:
     }
 
     dispose((disposable_t*)&shared_secret);
-    dispose((disposable_t*)&sock);
+
+    release_retval = resource_release(psock_resource_handle(sock));
+    if (STATUS_SUCCESS != release_retval)
+    {
+        retval = release_retval;
+    }
 
 cleanup_ping_sentinel_cert:
     release_retval =
@@ -208,6 +223,13 @@ cleanup_builder_opts:
 
 cleanup_crypto_suite:
     dispose((disposable_t*)&suite);
+
+cleanup_rcpr_allocator:
+    release_retval = resource_release(rcpr_allocator_resource_handle(alloc));
+    if (STATUS_SUCCESS != release_retval)
+    {
+        retval = release_retval;
+    }
 
 cleanup_allocator:
     dispose((disposable_t*)&alloc_opts);

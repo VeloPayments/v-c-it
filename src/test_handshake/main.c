@@ -3,7 +3,7 @@
  *
  * \brief Main entry point for the handshake test utility.
  *
- * \copyright 2021 Velo Payments.  See License.txt for license terms.
+ * \copyright 2021-2022 Velo Payments.  See License.txt for license terms.
  */
 
 #include <fcntl.h>
@@ -11,19 +11,21 @@
 #include <helpers/cert_helpers.h>
 #include <helpers/conn_helpers.h>
 #include <helpers/status_codes.h>
+#include <rcpr/psock.h>
 #include <rcpr/resource.h>
 #include <rcpr/uuid.h>
 #include <vcblockchain/entity_cert.h>
 #include <vcblockchain/error_codes.h>
 #include <vcblockchain/protocol.h>
 #include <vcblockchain/protocol/data.h>
-#include <vcblockchain/ssock.h>
 #include <vccrypt/suite.h>
 #include <vctool/file.h>
 #include <vctool/status_codes.h>
 #include <vpr/allocator/malloc_allocator.h>
 #include <unistd.h>
 
+RCPR_IMPORT_allocator_as(rcpr);
+RCPR_IMPORT_psock;
 RCPR_IMPORT_resource;
 RCPR_IMPORT_uuid;
 
@@ -42,11 +44,12 @@ int main(int argc, char* argv[])
 
     int retval, release_retval;
     allocator_options_t alloc_opts;
+    rcpr_allocator* alloc;
     vccrypt_suite_options_t suite;
     vccrypt_buffer_t shared_secret;
     vcblockchain_entity_private_cert* client_priv;
     file file;
-    ssock sock;
+    psock* sock;
     uint64_t client_iv, server_iv;
 
     /* register the velo v1 suite. */
@@ -55,6 +58,13 @@ int main(int argc, char* argv[])
     /* initialize the allocator. */
     malloc_allocator_options_init(&alloc_opts);
 
+    /* initialize the RCPR allocator. */
+    retval = rcpr_malloc_allocator_create(&alloc);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_allocator;
+    }
+
     /* initialize the vccrypt suite. */
     retval =
         vccrypt_suite_options_init(&suite, &alloc_opts, VCCRYPT_SUITE_VELO_V1);
@@ -62,7 +72,7 @@ int main(int argc, char* argv[])
     {
         fprintf(stderr, "Error initializing crypto suite.\n");
         retval = ERROR_CRYPTO_SUITE_INIT;
-        goto cleanup_allocator;
+        goto cleanup_rcpr_allocator;
     }
 
     /* create OS level file abstraction. */
@@ -77,8 +87,8 @@ int main(int argc, char* argv[])
     /* connect to agentd. */
     retval =
         agentd_connection_init(
-            &sock, &client_priv, &shared_secret, &client_iv, &server_iv, &file,
-            &suite, "127.0.0.1", 4931, "handshake.priv", "agentd.pub");
+            &sock, alloc, &client_priv, &shared_secret, &client_iv, &server_iv,
+            &file, &suite, "127.0.0.1", 4931, "handshake.priv", "agentd.pub");
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_file;
@@ -98,13 +108,24 @@ cleanup_connection:
     }
 
     dispose((disposable_t*)&shared_secret);
-    dispose((disposable_t*)&sock);
+    release_retval = resource_release(psock_resource_handle(sock));
+    if (STATUS_SUCCESS != release_retval)
+    {
+        retval = release_retval;
+    }
 
 cleanup_file:
     dispose((disposable_t*)&file);
 
 cleanup_crypto_suite:
     dispose((disposable_t*)&suite);
+
+cleanup_rcpr_allocator:
+    release_retval = resource_release(rcpr_allocator_resource_handle(alloc));
+    if (STATUS_SUCCESS != release_retval)
+    {
+        retval = release_retval;
+    }
 
 cleanup_allocator:
     dispose((disposable_t*)&alloc_opts);

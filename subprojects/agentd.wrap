@@ -1,5 +1,5 @@
 [wrap-git]
 directory = agentd
-revision = d5ef1d90df7dd29ece09c3ad397a903b3f9d1a44
+revision = cd67a9887d0f065421ce92a9843d864eef907e79
 url = git@github.com:VeloPayments/v-c-agentd.git
 push-url = git@github.com:VeloPayments/v-c-agentd.git

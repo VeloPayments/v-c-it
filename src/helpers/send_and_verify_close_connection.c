@@ -3,7 +3,7 @@
  *
  * \brief Send and verify the close connection request.
  *
- * \copyright 2021 Velo Payments, Inc.  All rights reserved.
+ * \copyright 2021-2022 Velo Payments, Inc.  All rights reserved.
  */
 
 #include <helpers/conn_helpers.h>
@@ -17,6 +17,7 @@
  * \brief Send and verify the close connection request.
  *
  * \param sock              The socket connection with agentd.
+ * \param alloc             The allocator to use for this operation.
  * \param suite             The crypto suite to use for this operation.
  * \param client_iv         The client-side initialization vector counter.
  * \param server_iv         The server-side initialization vector counter.
@@ -27,8 +28,9 @@
  *      - a non-zero error code on failure.
  */
 status send_and_verify_close_connection(
-    ssock* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    uint64_t* server_iv, vccrypt_buffer_t* shared_secret)
+    RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
+    vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
+    vccrypt_buffer_t* shared_secret)
 {
     status retval;
     uint32_t expected_close_connection_offset = 0x3133;
@@ -58,7 +60,7 @@ status send_and_verify_close_connection(
     /* get response. */
     retval =
         vcblockchain_protocol_recvresp(
-            sock, suite, server_iv, shared_secret,
+            sock, alloc, suite, server_iv, shared_secret,
             &close_connection_response);
     if (STATUS_SUCCESS != retval)
     {

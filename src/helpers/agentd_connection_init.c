@@ -3,7 +3,7 @@
  *
  * \brief Initialize a connection to an agentd instance.
  *
- * \copyright 2021 Velo Payments, Inc.  All rights reserved.
+ * \copyright 2021-2022 Velo Payments, Inc.  All rights reserved.
  */
 
 #include <fcntl.h>
@@ -18,6 +18,7 @@
 #include <vcblockchain/error_codes.h>
 #include <vccrypt/compare.h>
 
+RCPR_IMPORT_psock;
 RCPR_IMPORT_resource;
 RCPR_IMPORT_uuid;
 
@@ -26,16 +27,20 @@ RCPR_IMPORT_uuid;
  * the connection.
  *
  * This method initializes and returns a shared secret, client_iv, server_iv,
- * entity private certificate, and ssock instance on success. The shared secret
- * and ssock instance are both disposable and must be disposed by calling \ref
- * dispose when they are no longer needed. The private entity certificate is a
- * resource and must have its resource handle released by calling \ref
- * resource_release when it is no longer needed. The two IV values are used in
- * subsequent request and response calls in order to derive the per-message key
- * needed to encrypt or decrypt these messages.
+ * entity private certificate, and psock instance on success. The shared secret
+ * is disposable and must be disposed by calling \ref
+ * dispose when it is no longer needed. The psock instance is a resource and
+ * must be released by calling \ref resource_release when it is no longer
+ * needed. The private entity certificate is a resource and must have its
+ * resource handle released by calling \ref resource_release when it is no
+ * longer needed. The two IV values are used in subsequent request and response
+ * calls in order to derive the per-message key needed to encrypt or decrypt
+ * these messages.
  *
- * \param sock          Pointer to a ssock struct that will be initialized on
- *                      success with the socket connection to agentd.
+ * \param sock          Pointer to a psock pointer that will receive the psock
+ *                      instance on success with the socket connection to
+ *                      agentd.
+ * \param alloc         The allocator to use for this operation.
  * \param cert          Pointer to the entity private certificate pointer that
  *                      will receive the client private entity certificate on
  *                      success.
@@ -58,10 +63,11 @@ RCPR_IMPORT_uuid;
  *      - a non-zero error code on failure.
  */
 status agentd_connection_init(
-    ssock* sock, vcblockchain_entity_private_cert** cert,
-    vccrypt_buffer_t* shared_secret, uint64_t* client_iv, uint64_t* server_iv,
-    file* file, vccrypt_suite_options_t* suite, const char* hostaddr,
-    unsigned int hostport, const char* clientpriv, const char* serverpub)
+    RCPR_SYM(psock)** sock, RCPR_SYM(allocator)* alloc,
+    vcblockchain_entity_private_cert** cert, vccrypt_buffer_t* shared_secret,
+    uint64_t* client_iv, uint64_t* server_iv, file* file,
+    vccrypt_suite_options_t* suite, const char* hostaddr, unsigned int hostport,
+    const char* clientpriv, const char* serverpub)
 {
     bool success = false;
     status retval, release_retval;
@@ -111,7 +117,8 @@ status agentd_connection_init(
     }
 
     /* open socket connection to agentd. */
-    retval = ssock_init_from_host_address(sock, hostaddr, hostport);
+    retval =
+        psock_create_from_hostname_and_port(sock, alloc, hostaddr, hostport);
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error connecting to agentd.\n");
@@ -165,7 +172,7 @@ status agentd_connection_init(
     /* send handshake request. */
     retval =
         vcblockchain_protocol_sendreq_handshake_request(
-            sock, suite, (const vpr_uuid*)client_id, &key_nonce,
+            *sock, suite, (const vpr_uuid*)client_id, &key_nonce,
             &challenge_nonce);
     if (VCBLOCKCHAIN_STATUS_SUCCESS != retval)
     {
@@ -177,7 +184,7 @@ status agentd_connection_init(
     /* receive handshake response. */
     retval =
         vcblockchain_protocol_recvresp_handshake_request(
-            sock, suite, (vpr_uuid*)&server_id_from_server,
+            *sock, alloc, suite, (vpr_uuid*)&server_id_from_server,
             &server_pubkey_from_server, client_privkey, &key_nonce,
             &challenge_nonce, &server_challenge_nonce, shared_secret, &offset,
             &status);
@@ -212,7 +219,7 @@ status agentd_connection_init(
     /* send handshake acknowledge request. */
     retval =
         vcblockchain_protocol_sendreq_handshake_ack(
-            sock, suite, client_iv, server_iv, shared_secret,
+            *sock, suite, client_iv, server_iv, shared_secret,
             &server_challenge_nonce);
     if (VCBLOCKCHAIN_STATUS_SUCCESS != retval)
     {
@@ -224,7 +231,7 @@ status agentd_connection_init(
     /* read a response. */
     retval =
         vcblockchain_protocol_recvresp(
-            sock, suite, server_iv, shared_secret, &response);
+            *sock, alloc, suite, server_iv, shared_secret, &response);
     if (STATUS_SUCCESS != retval)
     {
         fprintf(stderr, "Error getting handshake ack response.\n");
@@ -283,8 +290,12 @@ cleanup_handshake_req:
 cleanup_sock:
     if (!success)
     {
-        dispose((disposable_t*)sock);
-        sock = NULL;
+        release_retval = resource_release(psock_resource_handle(*sock));
+        if (STATUS_SUCCESS != release_retval)
+        {
+            retval = release_retval;
+        }
+        *sock = NULL;
     }
 
 cleanup_server_cert:
@@ -321,10 +332,14 @@ done:
             shared_secret = NULL;
         }
 
-        if (sock != NULL)
+        if (*sock != NULL)
         {
-            dispose((disposable_t*)sock);
-            sock = NULL;
+            release_retval = resource_release(psock_resource_handle(*sock));
+            if (STATUS_SUCCESS != release_retval)
+            {
+                retval = release_retval;
+            }
+            *sock = NULL;
         }
 
         if (cert != NULL)

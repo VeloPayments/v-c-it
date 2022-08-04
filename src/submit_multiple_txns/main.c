@@ -3,7 +3,7 @@
  *
  * \brief Main entry point for the submit multiple transactions test utility.
  *
- * \copyright 2021 Velo Payments.  See License.txt for license terms.
+ * \copyright 2021-2022 Velo Payments.  See License.txt for license terms.
  */
 
 #include <stdio.h>
@@ -18,6 +18,8 @@
 #include <vpr/allocator/malloc_allocator.h>
 #include <vpr/parameters.h>
 
+RCPR_IMPORT_allocator_as(rcpr);
+RCPR_IMPORT_psock;
 RCPR_IMPORT_resource;
 RCPR_IMPORT_uuid;
 
@@ -58,11 +60,12 @@ int main(int argc, char* argv[])
     (void)argv;
     status retval, release_retval;
     allocator_options_t alloc_opts;
+    rcpr_allocator* alloc;
     vccrypt_suite_options_t suite;
     vccert_builder_options_t builder_opts;
     vccert_parser_options_t parser_options;
     file file;
-    ssock sock;
+    psock* sock;
     vcblockchain_entity_private_cert* client_priv;
     vccrypt_buffer_t shared_secret;
     uint64_t client_iv, server_iv;
@@ -82,6 +85,13 @@ int main(int argc, char* argv[])
     /* initialize the allocator. */
     malloc_allocator_options_init(&alloc_opts);
 
+    /* create the RCPR allocator. */
+    retval = rcpr_malloc_allocator_create(&alloc);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto cleanup_allocator;
+    }
+
     /* initialize the vccrypt suite. */
     retval =
         vccrypt_suite_options_init(&suite, &alloc_opts, VCCRYPT_SUITE_VELO_V1);
@@ -89,7 +99,7 @@ int main(int argc, char* argv[])
     {
         fprintf(stderr, "Error initializing crypto suite.\n");
         retval = ERROR_CRYPTO_SUITE_INIT;
-        goto cleanup_allocator;
+        goto cleanup_rcpr_allocator;
     }
 
     /* initialize certificate builder options. */
@@ -126,8 +136,8 @@ int main(int argc, char* argv[])
     /* connect to agentd. */
     retval =
         agentd_connection_init(
-            &sock, &client_priv, &shared_secret, &client_iv, &server_iv, &file,
-            &suite, "127.0.0.1", 4931, "test.priv", "agentd.pub");
+            &sock, alloc, &client_priv, &shared_secret, &client_iv, &server_iv,
+            &file, &suite, "127.0.0.1", 4931, "test.priv", "agentd.pub");
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_file;
@@ -192,8 +202,8 @@ int main(int argc, char* argv[])
     /* submit and verify cert 1. */
     retval =
         submit_and_verify_txn(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn1_id,
-            &artifact_id, &cert1_buffer);
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
+            &txn1_id, &artifact_id, &cert1_buffer);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_txn3_cert;
@@ -202,8 +212,8 @@ int main(int argc, char* argv[])
     /* submit and verify cert 2. */
     retval =
         submit_and_verify_txn(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn2_id,
-            &artifact_id, &cert2_buffer);
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
+            &txn2_id, &artifact_id, &cert2_buffer);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_txn3_cert;
@@ -212,8 +222,8 @@ int main(int argc, char* argv[])
     /* submit and verify cert 3. */
     retval =
         submit_and_verify_txn(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn3_id,
-            &artifact_id, &cert3_buffer);
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
+            &txn3_id, &artifact_id, &cert3_buffer);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_txn3_cert;
@@ -226,9 +236,9 @@ int main(int argc, char* argv[])
     /* get and verify the first transaction by id. */
     retval =
         get_and_verify_txn(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn1_id,
-            &txn1_cert, &prev_txn1_id, &next_txn1_id, &txn1_artifact_id,
-            &txn1_block_id);
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
+            &txn1_id, &txn1_cert, &prev_txn1_id, &next_txn1_id,
+            &txn1_artifact_id, &txn1_block_id);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_txn3_cert;
@@ -237,9 +247,9 @@ int main(int argc, char* argv[])
     /* get and verify the second transaction by id. */
     retval =
         get_and_verify_txn(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn2_id,
-            &txn2_cert, &prev_txn2_id, &next_txn2_id, &txn2_artifact_id,
-            &txn2_block_id);
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
+            &txn2_id, &txn2_cert, &prev_txn2_id, &next_txn2_id,
+            &txn2_artifact_id, &txn2_block_id);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_txn1_agentd_cert;
@@ -248,9 +258,9 @@ int main(int argc, char* argv[])
     /* get and verify the third transaction by id. */
     retval =
         get_and_verify_txn(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn3_id,
-            &txn3_cert, &prev_txn3_id, &next_txn3_id, &txn3_artifact_id,
-            &txn3_block_id);
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
+            &txn3_id, &txn3_cert, &prev_txn3_id, &next_txn3_id,
+            &txn3_artifact_id, &txn3_block_id);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_txn2_agentd_cert;
@@ -331,8 +341,8 @@ int main(int argc, char* argv[])
     /* get and verify txn1 next id. */
     retval =
         get_and_verify_next_txn_id(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn1_id,
-            &next_txn1_id);
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
+            &txn1_id, &next_txn1_id);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_txn3_agentd_cert;
@@ -349,8 +359,8 @@ int main(int argc, char* argv[])
     /* get and verify txn2 next id. */
     retval =
         get_and_verify_next_txn_id(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn2_id,
-            &next_txn2_id);
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
+            &txn2_id, &next_txn2_id);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_txn3_agentd_cert;
@@ -367,8 +377,8 @@ int main(int argc, char* argv[])
     /* get and verify txn3 prev id. */
     retval =
         get_and_verify_prev_txn_id(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn3_id,
-            &prev_txn3_id);
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
+            &txn3_id, &prev_txn3_id);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_txn3_agentd_cert;
@@ -385,8 +395,8 @@ int main(int argc, char* argv[])
     /* get and verify txn2 prev id. */
     retval =
         get_and_verify_prev_txn_id(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn2_id,
-            &prev_txn2_id);
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
+            &txn2_id, &prev_txn2_id);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_txn3_agentd_cert;
@@ -403,8 +413,8 @@ int main(int argc, char* argv[])
     /* get the block id for txn1. */
     retval =
         get_and_verify_txn_block_id(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn1_id,
-            &txn1_block_id2);
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
+            &txn1_id, &txn1_block_id2);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_txn3_agentd_cert;
@@ -413,8 +423,8 @@ int main(int argc, char* argv[])
     /* get the block id for txn2. */
     retval =
         get_and_verify_txn_block_id(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn2_id,
-            &txn2_block_id2);
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
+            &txn2_id, &txn2_block_id2);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_txn3_agentd_cert;
@@ -423,8 +433,8 @@ int main(int argc, char* argv[])
     /* get the block id for txn3. */
     retval =
         get_and_verify_txn_block_id(
-            &sock, &suite, &client_iv, &server_iv, &shared_secret, &txn3_id,
-            &txn3_block_id2);
+            sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
+            &txn3_id, &txn3_block_id2);
     if (STATUS_SUCCESS != retval)
     {
         goto cleanup_txn3_agentd_cert;
@@ -486,7 +496,12 @@ cleanup_connection:
     }
 
     dispose((disposable_t*)&shared_secret);
-    dispose((disposable_t*)&sock);
+
+    release_retval = resource_release(psock_resource_handle(sock));
+    if (STATUS_SUCCESS != release_retval)
+    {
+        retval = release_retval;
+    }
 
 cleanup_file:
     dispose((disposable_t*)&file);
@@ -499,6 +514,13 @@ cleanup_builder_opts:
 
 cleanup_crypto_suite:
     dispose((disposable_t*)&suite);
+
+cleanup_rcpr_allocator:
+    release_retval = resource_release(rcpr_allocator_resource_handle(alloc));
+    if (STATUS_SUCCESS != release_retval)
+    {
+        retval = release_retval;
+    }
 
 cleanup_allocator:
     dispose((disposable_t*)&alloc_opts);
