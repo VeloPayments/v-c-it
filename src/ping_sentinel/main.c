@@ -224,7 +224,7 @@ static status read_decode_and_dispatch_request(
     uint64_t* client_iv, uint64_t* server_iv, vccrypt_buffer_t* shared_secret)
 {
     status retval;
-    vccrypt_buffer_t response;
+    vccrypt_buffer_t response, send_response;
     vccrypt_buffer_t response_body;
     uint32_t request_id, offset, status_code;
     bool fail_response = false;
@@ -299,8 +299,44 @@ static status read_decode_and_dispatch_request(
                 STATUS_SUCCESS, &response_body);
     }
 
+    if (STATUS_SUCCESS != retval)
+    {
+        retval = ERROR_WRITE_EXTENDED_API_RESPONSE;
+        goto cleanup_response_body;
+    }
+
+    /* read a response from the API. */
+    retval =
+        vcblockchain_protocol_recvresp(
+            sock, alloc, suite, server_iv, shared_secret, &send_response);
+    if (STATUS_SUCCESS != retval)
+    {
+        retval = ERROR_READ_EXTENDED_API_RESPONSE;
+        goto cleanup_response_body;
+    }
+
+    /* decode the header. */
+    retval =
+        vcblockchain_protocol_response_decode_header(
+            &request_id, &offset, &status_code, &send_response);
+    if (STATUS_SUCCESS != retval)
+    {
+        retval = ERROR_READ_EXTENDED_API_RESPONSE_DECODE_HEADER;
+        goto cleanup_send_response;
+    }
+
+    /* verify that this is a send response. */
+    if (PROTOCOL_REQ_ID_EXTENDED_API_SENDRESP != request_id)
+    {
+        retval = ERROR_READ_EXTENDED_API_BAD_REQUEST_ID;
+        goto cleanup_send_response;
+    }
+
     /* either way, we are done. */
-    goto cleanup_response_body;
+    goto cleanup_send_response;
+
+cleanup_send_response:
+    dispose((disposable_t*)&send_response);
 
 cleanup_response_body:
     dispose((disposable_t*)&response_body);
