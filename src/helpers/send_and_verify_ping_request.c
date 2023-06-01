@@ -3,7 +3,7 @@
  *
  * \brief Send and verify the extended api ping request and response.
  *
- * \copyright 2022 Velo Payments, Inc.  All rights reserved.
+ * \copyright 2022-2023 Velo Payments, Inc.  All rights reserved.
  */
 
 #include <helpers/conn_helpers.h>
@@ -40,18 +40,27 @@ status send_and_verify_ping_request(
     vccrypt_buffer_t ping_request_response;
     uint32_t request_id, resp_offset, status_code;
     protocol_resp_extended_api ping_resp;
+    vccrypt_buffer_t payload;
+
+    /* create the ping payload */
+    retval = vccrypt_buffer_init(&payload, suite->alloc_opts, 1);
+    if (STATUS_SUCCESS != retval)
+    {
+        goto done;
+    }
 
     /* send the ping protocol request. */
     retval =
         ping_protocol_sendreq_ping(
-            sock, suite, client_iv, shared_secret, ping_sentinel_id, offset);
+            sock, suite, client_iv, shared_secret, ping_sentinel_id, offset,
+            &payload);
     if (STATUS_SUCCESS != retval)
     {
         fprintf(
             stderr, "Failed to send extended api ping request. (%x).\n",
             retval);
         retval = ERROR_PING_REQUEST_SEND;
-        goto done;
+        goto cleanup_payload;
     }
 
     /* get the response. */
@@ -63,7 +72,7 @@ status send_and_verify_ping_request(
     {
         fprintf(stderr, "Failed to receive extended api ping response.\n");
         retval = ERROR_PING_RESPONSE_RECEIVE;
-        goto done;
+        goto cleanup_payload;
     }
 
     /* decode the response header. */
@@ -133,6 +142,9 @@ cleanup_response:
 
 cleanup_buffer:
     dispose((disposable_t*)&ping_request_response);
+
+cleanup_payload:
+    dispose(&payload.hdr);
 
 done:
     return retval;

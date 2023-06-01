@@ -24,11 +24,13 @@ extern "C" {
  * \param client_iv     Pointer to the client IV, updated by this call.
  * \param shared_secret The shared secret to use ofr this request.
  * \param offset        The offset for this request.
+ * \param payload       Payload to copy to the ping request.
  */
 status ping_protocol_sendreq_ping(
     RCPR_SYM(psock)* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
     vccrypt_buffer_t* shared_secret,
-    const vpr_uuid* ping_sentinel_id, uint32_t offset);
+    const vpr_uuid* ping_sentinel_id, uint32_t offset,
+    const vccrypt_buffer_t* payload);
 
 /**
  * \brief Send a ping response request to the extended ping API.
