@@ -4,7 +4,7 @@
  * \brief Send a ping response request to the ping sentinel using the extended
  * API.
  *
- * \copyright 2022 Velo Payments, Inc.  All rights reserved.
+ * \copyright 2022-2023 Velo Payments, Inc.  All rights reserved.
  */
 
 #include <helpers/ping_protocol.h>
@@ -19,31 +19,16 @@
  * \param shared_secret The shared secret to use ofr this request.
  * \param offset        The offset for this request.
  * \param status        The status code for this request.
+ * \param payload       Payload to copy to the ping response.
  */
 status ping_protocol_sendreq_ping_response(
     RCPR_SYM(psock)* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    vccrypt_buffer_t* shared_secret, uint64_t offset, uint32_t status_code)
+    vccrypt_buffer_t* shared_secret, uint64_t offset, uint32_t status_code,
+    const vccrypt_buffer_t* payload)
 {
-    status retval;
-    vccrypt_buffer_t payload;
-
-    /* create dummy response body. */
-    retval = vccrypt_buffer_init(&payload, suite->alloc_opts, 1);
-    if (STATUS_SUCCESS != retval)
-    {
-        goto done;
-    }
-
     /* send response request. */
-    retval =
+    return
         vcblockchain_protocol_sendreq_extended_api_response(
             sock, suite, client_iv, shared_secret, offset, status_code,
-            &payload);
-    goto cleanup_payload;
-
-cleanup_payload:
-    dispose((disposable_t*)&payload);
-
-done:
-    return retval;
+            payload);
 }
