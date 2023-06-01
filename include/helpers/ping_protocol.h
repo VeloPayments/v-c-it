@@ -41,10 +41,12 @@ status ping_protocol_sendreq_ping(
  * \param shared_secret The shared secret to use ofr this request.
  * \param offset        The offset for this request.
  * \param status        The status code for this request.
+ * \param payload       Payload to copy to the ping response.
  */
 status ping_protocol_sendreq_ping_response(
     RCPR_SYM(psock)* sock, vccrypt_suite_options_t* suite, uint64_t* client_iv,
-    vccrypt_buffer_t* shared_secret, uint64_t offset, uint32_t status_code);
+    vccrypt_buffer_t* shared_secret, uint64_t offset, uint32_t status_code,
+    const vccrypt_buffer_t* payload);
 
 #if defined(__cplusplus)
 }
