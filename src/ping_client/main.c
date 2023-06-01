@@ -3,7 +3,7 @@
  *
  * \brief Main entry point for the ping client test utility.
  *
- * \copyright 2022 Velo Payments.  See License.txt for license terms.
+ * \copyright 2022-2023 Velo Payments.  See License.txt for license terms.
  */
 
 #include <helpers/cert_helpers.h>
