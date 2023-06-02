@@ -381,6 +381,7 @@ status send_and_verify_enable_extended_api(
  * \param shared_secret     The computed shared secret for this session.
  * \param offset            The offset to use for this request.
  * \param ping_sentinel_id  The UUID of the ping sentinel.
+ * \param payload_size      The size of the payload to send.
  *
  * \returns a status code indicating success or failure.
  *      - STATUS_SUCCESS on success.
@@ -390,7 +391,7 @@ status send_and_verify_ping_request(
     RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
     vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
     vccrypt_buffer_t* shared_secret, uint32_t offset,
-    const vpr_uuid* ping_sentinel_id);
+    const vpr_uuid* ping_sentinel_id, size_t payload_size);
 
 /**
  * \brief Get and verify the connection status.
