@@ -6,10 +6,12 @@
  * \copyright 2023 Velo Payments.  See License.txt for license terms.
  */
 
+#include <errno.h>
 #include <helpers/cert_helpers.h>
 #include <helpers/conn_helpers.h>
 #include <helpers/ping_protocol.h>
 #include <helpers/status_codes.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <vpr/allocator/malloc_allocator.h>
 #include <vpr/parameters.h>
@@ -18,6 +20,9 @@ RCPR_IMPORT_allocator_as(rcpr);
 RCPR_IMPORT_psock;
 RCPR_IMPORT_resource;
 RCPR_IMPORT_uuid;
+
+/* forward decls. */
+static size_t get_payload_size();
 
 /**
  * \brief Main entry point for the ping client test utility.
@@ -47,6 +52,7 @@ int main(int argc, char* argv[])
     const rcpr_uuid* client_id;
     vcblockchain_entity_public_cert* ping_sentinel_cert;
     uint32_t offset_ctr = 5U;
+    size_t payload_size = get_payload_size();
 
     /* register the velo v1 suite. */
     vccrypt_suite_register_velo_v1();
@@ -159,7 +165,7 @@ int main(int argc, char* argv[])
         retval =
             send_and_verify_ping_request(
                 sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
-                offset_ctr++, (const vpr_uuid*)ping_sentinel_id, 1);
+                offset_ctr++, (const vpr_uuid*)ping_sentinel_id, payload_size);
         if (STATUS_SUCCESS != retval)
         {
             goto cleanup_connection;
@@ -234,4 +240,38 @@ cleanup_allocator:
     dispose((disposable_t*)&alloc_opts);
 
     return retval;
+}
+
+/**
+ * \brief Get the payload size from the environment, defaulting it to 1.
+ *
+ * \returns the payload size.
+ */
+static size_t get_payload_size()
+{
+    const char* payload_size_str;
+    size_t payload_size;
+
+    /* attempt to read the payload size from the environment. */
+    payload_size_str = getenv("PING_CLIENT_PAYLOAD_SIZE");
+    if (NULL == payload_size_str)
+    {
+        goto return_default;
+    }
+
+    /* attempt to convert this size to a size_t value. */
+    errno = 0;
+    payload_size = (size_t)strtoumax(payload_size_str, NULL, 10);
+    if (0 == payload_size || 0 != errno)
+    {
+        fprintf(stderr, "Bad PING_CLIENT_PAYLOAD_SIZE value.\n");
+        goto return_default;
+    }
+
+    /* return the updated size. */
+    printf("Using %lu as the max size.\n", payload_size);
+    return payload_size;
+
+return_default:
+    return 1;
 }
