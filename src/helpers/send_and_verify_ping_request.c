@@ -25,6 +25,7 @@
  * \param shared_secret     The computed shared secret for this session.
  * \param offset            The offset to use for this request.
  * \param ping_sentinel_id  The UUID of the ping sentinel.
+ * \param payload_size      The size of the payload to send.
  *
  * \returns a status code indicating success or failure.
  *      - STATUS_SUCCESS on success.
@@ -34,7 +35,7 @@ status send_and_verify_ping_request(
     RCPR_SYM(psock)* sock, RCPR_SYM(allocator)* alloc,
     vccrypt_suite_options_t* suite, uint64_t* client_iv, uint64_t* server_iv,
     vccrypt_buffer_t* shared_secret, uint32_t offset,
-    const vpr_uuid* ping_sentinel_id)
+    const vpr_uuid* ping_sentinel_id, size_t payload_size)
 {
     status retval;
     vccrypt_buffer_t ping_request_response;
@@ -43,7 +44,7 @@ status send_and_verify_ping_request(
     vccrypt_buffer_t payload;
 
     /* create the ping payload */
-    retval = vccrypt_buffer_init(&payload, suite->alloc_opts, 1);
+    retval = vccrypt_buffer_init(&payload, suite->alloc_opts, payload_size);
     if (STATUS_SUCCESS != retval)
     {
         goto done;
