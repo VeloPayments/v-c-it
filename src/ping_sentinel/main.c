@@ -3,14 +3,16 @@
  *
  * \brief Main entry point for the ping sentinel test utility.
  *
- * \copyright 2022 Velo Payments.  See License.txt for license terms.
+ * \copyright 2022-2023 Velo Payments.  See License.txt for license terms.
  */
 
+#include <errno.h>
 #include <helpers/cert_helpers.h>
 #include <helpers/conn_helpers.h>
 #include <helpers/ping_protocol.h>
 #include <helpers/ping_protocol/verbs.h>
 #include <helpers/status_codes.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 #include <vcblockchain/protocol.h>
@@ -29,7 +31,9 @@ RCPR_IMPORT_uuid;
 /* forward decls */
 static status read_decode_and_dispatch_request(
     psock* sock, rcpr_allocator* alloc, vccrypt_suite_options_t* suite,
-    uint64_t* client_iv, uint64_t* server_iv, vccrypt_buffer_t* shared_secret);
+    uint64_t* client_iv, uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
+    size_t payload_size);
+static size_t get_payload_size();
 
 /**
  * \brief Main entry point for the ping sentinel test utility.
@@ -57,6 +61,7 @@ int main(int argc, char* argv[])
     const vccrypt_buffer_t* client_sign_priv;
     const rcpr_uuid* client_id;
     uint32_t offset_ctr = 5U;
+    size_t payload_size = get_payload_size();
 
     /* register the velo v1 suite. */
     vccrypt_suite_register_velo_v1();
@@ -154,7 +159,8 @@ int main(int argc, char* argv[])
     {
         retval =
             read_decode_and_dispatch_request(
-                sock, alloc, &suite, &client_iv, &server_iv, &shared_secret);
+                sock, alloc, &suite, &client_iv, &server_iv, &shared_secret,
+                payload_size);
         if (STATUS_SUCCESS != retval)
         {
             goto cleanup_connection;
@@ -221,7 +227,8 @@ cleanup_allocator:
  */
 static status read_decode_and_dispatch_request(
     psock* sock, rcpr_allocator* alloc, vccrypt_suite_options_t* suite,
-    uint64_t* client_iv, uint64_t* server_iv, vccrypt_buffer_t* shared_secret)
+    uint64_t* client_iv, uint64_t* server_iv, vccrypt_buffer_t* shared_secret,
+    size_t payload_size)
 {
     status retval;
     vccrypt_buffer_t response, send_response;
@@ -276,7 +283,8 @@ static status read_decode_and_dispatch_request(
     }
 
     /* create a dummy response body. */
-    retval = vccrypt_buffer_init(&response_body, suite->alloc_opts, 1);
+    retval =
+        vccrypt_buffer_init(&response_body, suite->alloc_opts, payload_size);
     if (STATUS_SUCCESS != retval)
     {
         retval = ERROR_READ_EXTENDED_API_OUT_OF_MEMORY;
@@ -349,4 +357,38 @@ cleanup_response:
 
 done:
     return retval;
+}
+
+/**
+ * \brief Get the payload size from the environment, defaulting it to 1.
+ *
+ * \returns the payload size.
+ */
+static size_t get_payload_size()
+{
+    const char* payload_size_str;
+    size_t payload_size;
+
+    /* attempt to read the payload size from the environment. */
+    payload_size_str = getenv("PING_SENTINEL_PAYLOAD_SIZE");
+    if (NULL == payload_size_str)
+    {
+        goto return_default;
+    }
+
+    /* attempt to convert this size to a size_t value. */
+    errno = 0;
+    payload_size = (size_t)strtoumax(payload_size_str, NULL, 10);
+    if (0 == payload_size || 0 != errno)
+    {
+        fprintf(stderr, "Bad PING_SENTINEL_PAYLOAD_SIZE value.\n");
+        goto return_default;
+    }
+
+    /* return the updated size. */
+    printf("Using %lu as the max size.\n", payload_size);
+    return payload_size;
+
+return_default:
+    return 1;
 }
